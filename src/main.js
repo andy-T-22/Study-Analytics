@@ -128,6 +128,9 @@ export const openSessionDetails = async (id) => {
     disableEditSession();
     document.getElementById('modal-detail').classList.remove('hidden');
 
+    // Initialize Smart Logic
+    setupSmartEditing();
+
     // Render Timeline (must be after modal is visible for correct sizing)
     setTimeout(() => renderTimeline(session), 50);
 };
@@ -171,93 +174,69 @@ const toggleEditSession = () => {
 
 const saveSessionChanges = async () => {
     try {
-        const user = getCurrentUser();
-        if (!currentDetailId) return;
-
         const newSub = document.getElementById('detail-subject').value;
         const newMet = document.getElementById('detail-method').value;
 
-        // 1. Get Values
-        const newNet = (parseInt(document.getElementById('detail-net-edit').value) || 0) * 60000;
-        const newPauseTotal = (parseInt(document.getElementById('detail-pause-edit').value) || 0) * 60000;
-        const newGross = newNet + newPauseTotal;
-        const newEff = newGross > 0 ? Math.round((newNet / newGross) * 100) : 0;
+        // New Time Values
+        const dateVal = document.getElementById('detail-date-edit').value;
+        const startVal = document.getElementById('detail-start-edit').value;
+        const endVal = document.getElementById('detail-end-edit').value;
 
-        // 2. Find Session
-        const session = window.globalSessionCache.find(s => s.id === currentDetailId);
-        if (!session) return showAlert("Error: Sesión no encontrada en caché.");
+        if (!dateVal || !startVal || !endVal) return showAlert("Completa todos los campos de fecha y hora.");
 
-        // Safe Date Parsing
-        const getMs = (val) => val instanceof Date ? val.getTime() : new Date(val).getTime();
-        const startMs = getMs(session.startTime);
+        // Helpers for Time calc
+        const startTs = new Date(`${dateVal}T${startVal}`).getTime();
+        const endTs = new Date(`${dateVal}T${endVal}`).getTime();
 
-        // Check Validity
-        if (isNaN(startMs)) return showAlert("Error: Fecha de inicio inválida.");
+        if (endTs <= startTs) return showAlert("La hora de fin debe ser posterior al inicio.");
 
-        // 3. Handle Interruptions
-        let currentInts = session.interruptions ? [...session.interruptions] : [];
-        let currentSum = currentInts.reduce((acc, i) => acc + (i.duration || 0), 0);
-        let diff = newPauseTotal - currentSum;
+        const newGross = endTs - startTs;
 
-        if (diff > 0) {
-            let oldEndMs = getMs(session.endTime);
-            let anchor = !isNaN(oldEndMs) ? oldEndMs : (startMs + newNet);
+        // Get current session data (to confirm exist/auth)
+        const user = getCurrentUser();
+        // Recalculate based on INPUTS (Smart Edit)
+        const newPauseMins = parseInt(document.getElementById('detail-pause-edit').value) || 0;
+        const newPauseMs = newPauseMins * 60000;
+        const finalNetMs = Math.max(0, newGross - newPauseMs);
 
-            currentInts.push({
-                reason: "Ajuste Manual",
-                start: anchor,
-                end: anchor + diff,
-                duration: diff
-            });
-        } else if (diff < 0) {
-            let toRemove = Math.abs(diff);
-            for (let i = currentInts.length - 1; i >= 0; i--) {
-                if (toRemove <= 0) break;
-                let int = currentInts[i];
-                if (int.duration >= toRemove) {
-                    int.duration -= toRemove;
-                    int.end -= toRemove;
-                    toRemove = 0;
-                } else {
-                    toRemove -= int.duration;
-                    currentInts.splice(i, 1);
-                }
-            }
-        }
+        if (finalNetMs < 0) return showAlert("La duración de las pausas excede la duración total.");
 
-        // 4. Recalculate EndTime
-        const newEndTime = new Date(startMs + newGross);
+        const newEff = newGross > 0 ? Math.round((finalNetMs / newGross) * 100) : 0;
 
-        // Update Local Cache Object in memory
-        session.subject = newSub;
-        session.method = newMet;
-        session.netDuration = newNet;
-        session.grossDuration = newGross;
-        session.efficiency = newEff;
-        session.interruptions = currentInts;
-        session.endTime = newEndTime;
+        const updateData = {
+            subject: newSub,
+            method: newMet,
+            startTime: startTs,
+            endTime: endTs,
+            grossDuration: newGross,
+            netDuration: finalNetMs,
+            efficiency: newEff,
+            interruptions: newPauseMs > 0 ? [{
+                start: startTs + (finalNetMs / 2),
+                end: startTs + (finalNetMs / 2) + newPauseMs,
+                duration: newPauseMs,
+                reason: "Editado Manualmente"
+            }] : []
+        };
 
         if (user) {
-            await updateDoc(doc(db, "study_sessions", currentDetailId), {
-                subject: newSub,
-                method: newMet,
-                netDuration: newNet,
-                grossDuration: newGross,
-                efficiency: newEff,
-                interruptions: currentInts,
-                endTime: newEndTime
-            });
-            showAlert("Datos actualizados.");
+            await updateDoc(doc(db, "study_sessions", currentDetailId), updateData);
+            disableEditSession();
+            showAlert("¡Guardado en Nube!");
+            document.getElementById('modal-detail').classList.add('hidden');
         } else {
-            // Guest Mode
-            const h = window.globalSessionCache;
-            localStorage.setItem('guest_study_history', JSON.stringify(h));
-            showAlert("Datos actualizados (Local).");
-            loadHistory();
+            const history = window.globalSessionCache || [];
+            const idx = history.findIndex(s => s.id == currentDetailId);
+            if (idx > -1) {
+                // Merge
+                history[idx] = { ...history[idx], ...updateData };
+                localStorage.setItem('guest_study_history', JSON.stringify(history));
+                loadHistory(); // Reload table
+                disableEditSession();
+                document.getElementById('modal-detail').classList.add('hidden');
+                showAlert("Guardado.");
+            }
         }
-
-        disableEditSession();
-        openSessionDetails(currentDetailId);
     } catch (err) {
         console.error("Save error:", err);
         showAlert("Ocurrió un error al guardar.");
@@ -286,39 +265,249 @@ const promptDeleteSession = () => {
 
 // --- MANUAL ENTRY ---
 const openManualEntry = () => {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    // Format YYYY-MM-DD
+    document.getElementById('man-date').value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    // Format HH:MM
+    document.getElementById('man-start').value = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+
+    const later = new Date(d.getTime() + 3600000);
+    document.getElementById('man-end').value = later.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+
+    // Reset Duration
+    document.getElementById('man-duration').value = "";
+    document.getElementById('man-pause').value = "0";
+
     document.getElementById('modal-manual').classList.remove('hidden');
+    setupManualSmartLogic();
 };
 
 const saveManualEntry = async () => {
-    // Basic Manual Save
-    const sub = document.getElementById('man-subject').value;
-    const met = document.getElementById('man-method').value;
-    const dur = parseInt(document.getElementById('man-duration').value) || 0;
+    try {
+        const sub = document.getElementById('man-subject').value;
+        const met = document.getElementById('man-method').value;
+        const subMan = document.getElementById('man-subject').value; // already captured
 
-    if (dur <= 0) return showAlert("Duración inválida");
+        const dateVal = document.getElementById('man-date').value;
+        const startVal = document.getElementById('man-start').value;
+        const endVal = document.getElementById('man-end').value;
+        const durVal = parseInt(document.getElementById('man-duration').value) || 0;
+        const pauseMins = parseInt(document.getElementById('man-pause').value) || 0;
 
-    const sessionData = {
-        uid: getCurrentUser() ? getCurrentUser().uid : 'guest',
-        subject: sub,
-        method: met,
-        startTime: Date.now() - (dur * 60000),
-        endTime: Date.now(),
-        grossDuration: dur * 60000,
-        netDuration: dur * 60000,
-        efficiency: 100,
-        createdAt: Date.now()
+        if (!dateVal) return showAlert("Por favor selecciona una fecha");
+
+        let startTs, endTs, gross, net;
+        const pauseMs = pauseMins * 60000;
+
+        // Logic: Compute Times
+        if (startVal && endVal) {
+            // Strict Start/End
+            const d = new Date(dateVal); // Parsing YYYY-MM-DD
+            // Construct safe TS
+            startTs = new Date(`${dateVal}T${startVal}`).getTime();
+            endTs = new Date(`${dateVal}T${endVal}`).getTime();
+
+            if (endTs <= startTs) return showAlert("La hora de fin debe ser posterior al inicio");
+
+            gross = endTs - startTs;
+            net = gross - pauseMs;
+        } else if (durVal > 0) {
+            // Flexible: Duration Driven
+            const baseTime = startVal || "12:00";
+            startTs = new Date(`${dateVal}T${baseTime}`).getTime();
+
+            net = durVal * 60000;
+            gross = net + pauseMs;
+            endTs = startTs + gross;
+        } else {
+            return showAlert("Completa hora de inicio/fin o la duración total");
+        }
+
+        if (net < 0) return showAlert("Las pausas exceden la duración total");
+
+        const eff = gross > 0 ? Math.round((net / gross) * 100) : 0;
+
+        const sessionData = {
+            uid: getCurrentUser() ? getCurrentUser().uid : 'guest',
+            subject: sub,
+            method: met,
+            startTime: startTs,
+            endTime: endTs,
+            grossDuration: gross,
+            netDuration: net,
+            efficiency: eff,
+            interruptions: pauseMs > 0 ? [{ start: startTs + (net / 2), end: startTs + (net / 2) + pauseMs, duration: pauseMs, reason: 'Manual' }] : [],
+            createdAt: Date.now()
+        };
+
+        const user = getCurrentUser();
+        if (user) {
+            await addDoc(collection(db, 'study_sessions'), sessionData);
+            document.getElementById('modal-manual').classList.add('hidden');
+            showAlert("Sesión guardada en Nube.");
+        } else {
+            // Guest needs ID
+            sessionData.id = Date.now().toString();
+            const history = window.globalSessionCache || [];
+            history.push(sessionData);
+            localStorage.setItem('guest_study_history', JSON.stringify(history));
+            document.getElementById('modal-manual').classList.add('hidden');
+            loadHistory();
+            showAlert("Sesión agregada.");
+        }
+    } catch (e) {
+        console.error(e);
+        showAlert("Error al guardar manual.");
+    }
+};
+
+// --- SMART EDITING HELPERS ---
+
+function setupSmartEditing() {
+    const getEl = (id) => document.getElementById(id);
+    const getTs = (timeStr) => {
+        if (!timeStr) return 0;
+        const [h, m] = timeStr.split(':').map(Number);
+        const dateVal = getEl('detail-date-edit').value;
+        if (!dateVal) return 0;
+        const d = new Date(dateVal + 'T00:00:00');
+        d.setHours(h, m, 0, 0);
+        return d.getTime();
     };
 
-    const user = getCurrentUser();
-    if (user) {
-        await addDoc(collection(db, 'study_sessions'), sessionData);
-    } else {
-        const h = JSON.parse(localStorage.getItem('guest_study_history') || '[]');
-        sessionData.id = Date.now();
-        h.push(sessionData);
-        localStorage.setItem('guest_study_history', JSON.stringify(h));
-        loadHistory();
-    }
-    document.getElementById('modal-manual').classList.add('hidden');
-    showAlert("Agregado.");
-};
+    const formatTs = (ts) => {
+        return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    };
+
+    const inputs = {
+        start: getEl('detail-start-edit'),
+        end: getEl('detail-end-edit'),
+        net: getEl('detail-net-edit'),
+        pause: getEl('detail-pause-edit')
+    };
+
+    const handleTimeChange = () => {
+        const s = getTs(inputs.start.value);
+        const e = getTs(inputs.end.value);
+        if (e > s && s > 0 && e > 0) {
+            const grossMs = e - s;
+            const pauseMs = (parseInt(inputs.pause.value) || 0) * 60000;
+            const netMs = Math.max(0, grossMs - pauseMs);
+            inputs.net.value = Math.floor(netMs / 60000);
+        }
+    };
+
+    inputs.start.onchange = handleTimeChange;
+    inputs.end.onchange = handleTimeChange;
+
+    inputs.net.onchange = () => {
+        const s = getTs(inputs.start.value);
+        if (s > 0) {
+            const netMs = (parseInt(inputs.net.value) || 0) * 60000;
+            const pauseMs = (parseInt(inputs.pause.value) || 0) * 60000;
+            const grossMs = netMs + pauseMs;
+            const newEndTs = s + grossMs;
+            inputs.end.value = formatTs(newEndTs);
+        }
+    };
+
+    inputs.pause.onchange = () => {
+        // Keep Start & End constant, update Net
+        handleTimeChange();
+    };
+}
+
+let manualLogicInited = false;
+function setupManualSmartLogic() {
+    if (manualLogicInited) return;
+    manualLogicInited = true;
+
+    const getEl = (id) => document.getElementById(id);
+    const inputs = {
+        d: getEl('man-date'),
+        s: getEl('man-start'),
+        e: getEl('man-end'),
+        dur: getEl('man-duration'),
+        p: getEl('man-pause')
+    };
+
+    const getTs = (timeStr) => {
+        if (!timeStr) return 0;
+        const [h, m] = timeStr.split(':').map(Number);
+        const dVal = inputs.d.valueAsDate || new Date(inputs.d.value);
+        const date = new Date(dVal);
+        date.setHours(h, m, 0, 0);
+        return date.getTime();
+    };
+
+    const formatTime = (ts) => {
+        return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    };
+
+    // 1. Change Start -> Update End (Move Block) or Calc Duration (Resize)
+    inputs.s.onchange = () => {
+        const s = getTs(inputs.s.value);
+        const durVal = parseInt(inputs.dur.value) || 0;
+        const pVal = parseInt(inputs.p.value) || 0;
+
+        if (durVal > 0) {
+            // Move: Start + Duration -> End
+            const grossMs = (durVal + pVal) * 60000;
+            inputs.e.value = formatTime(s + grossMs);
+        } else if (inputs.e.value) {
+            // Resize: End - Start -> Duration
+            const e = getTs(inputs.e.value);
+            if (e > s) {
+                const grossMs = e - s;
+                inputs.dur.value = Math.max(0, Math.floor(grossMs / 60000) - pVal);
+            }
+        }
+    };
+
+    // 2. Change End -> Calc Duration (Resize) or Calc Start (Move Backwards)
+    inputs.e.onchange = () => {
+        const s = getTs(inputs.s.value);
+        const e = getTs(inputs.e.value);
+        const durVal = parseInt(inputs.dur.value) || 0;
+        const pVal = parseInt(inputs.p.value) || 0;
+
+        if (s && e && e > s) {
+            // Start + End -> Calc Duration (Resize)
+            const grossMs = e - s;
+            inputs.dur.value = Math.max(0, Math.floor(grossMs / 60000) - pVal);
+        } else if (durVal > 0 && e) {
+            // Duration + End -> Calc Start (Move Backwards)
+            const grossMs = (durVal + pVal) * 60000;
+            inputs.s.value = formatTime(e - grossMs);
+        }
+    };
+
+    // 3. Change Duration -> Update End (Extend) or Start (Backwards)
+    inputs.dur.oninput = () => {
+        const durVal = parseInt(inputs.dur.value);
+        if (!durVal && durVal !== 0) return;
+
+        const pVal = parseInt(inputs.p.value) || 0;
+        const grossMs = (durVal + pVal) * 60000;
+
+        if (inputs.s.value) {
+            const s = getTs(inputs.s.value);
+            inputs.e.value = formatTime(s + grossMs);
+        } else if (inputs.e.value) {
+            const e = getTs(inputs.e.value);
+            inputs.s.value = formatTime(e - grossMs);
+        }
+    };
+
+    // 4. Change Pause -> Update End (Extend)
+    inputs.p.oninput = () => {
+        const s = getTs(inputs.s.value);
+        if (s) {
+            const d = parseInt(inputs.dur.value) || 0;
+            const p = parseInt(inputs.p.value) || 0;
+            const grossMs = (d + p) * 60000;
+            inputs.e.value = formatTime(s + grossMs);
+        }
+    };
+}
