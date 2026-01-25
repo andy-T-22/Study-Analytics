@@ -121,17 +121,12 @@ const renderInterruptionsChart = (map) => {
 };
 
 // --- WEEKLY TIMELINE (Previously Heatmap) ---
+// --- WEEKLY TIMELINE ---
 export const renderWeeklyChart = (data) => {
     const ctx = document.getElementById('chart-weekly')?.getContext('2d');
     if (!ctx) return;
 
-    // Destroy if exists (we reuse 'int' slot or better create a new one 'weekly')
     if (chartInstances.weekly) chartInstances.weekly.destroy();
-
-    // Data Processing
-    // We want to show sessions for the relevant week relative to the filter, 
-    // BUT usually 'dashboard' shows "This Week" or filtered range. 
-    // The previous heatmap used filteredData directly. We will stick to that.
 
     // Map sesssions to Bars
     const bars = [];
@@ -141,12 +136,13 @@ export const renderWeeklyChart = (data) => {
     let minH = 24, maxH = 0;
 
     if (data.length === 0) {
-        minH = 8; maxH = 20; // Default view if empty
+        minH = 8; maxH = 20;
     } else {
         data.forEach(s => {
             const dStart = new Date(s.startTime);
             const dEnd = new Date(s.endTime);
 
+            // Use simple hours + decimals
             const startH = dStart.getHours() + dStart.getMinutes() / 60;
             let endH = dEnd.getHours() + dEnd.getMinutes() / 60;
             if (endH < startH) endH = 24;
@@ -154,31 +150,35 @@ export const renderWeeklyChart = (data) => {
             if (startH < minH) minH = startH;
             if (endH > maxH) maxH = endH;
         });
-        // Add padding
         minH = Math.max(0, Math.floor(minH) - 1);
         maxH = Math.min(24, Math.ceil(maxH) + 1);
     }
 
-
+    // Unique Labels to prevent merging
+    const dayLabels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
     data.forEach(s => {
         const d = new Date(s.startTime);
+
+        // Correct Day Index (Mon=0 ... Sun=6)
         let dayIndex = d.getDay() - 1;
         if (dayIndex < 0) dayIndex = 6;
 
-        const dayLabels = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
         const yVal = dayLabels[dayIndex];
 
         const startH = d.getHours() + d.getMinutes() / 60;
         let endD = new Date(s.endTime);
         let endH = endD.getHours() + endD.getMinutes() / 60;
+
+        // Handle overflow (session ending next day) - Visual cap at 24h
+        // (A more robust pivot would split the bar, but capping is fine for MVP)
         if (endH < startH) endH = 24.0;
 
-        // 3. Gradient Color Logic (50%=Red -> 100%=Green)
+        // Gradient Logic
         const eff = s.efficiency || 0;
         let hue = 0;
-        if (eff <= 50) hue = 0;
-        else if (eff >= 100) hue = 120;
+        if (eff <= 50) hue = 0; // Red
+        else if (eff >= 100) hue = 120; // Green
         else hue = ((eff - 50) / 50) * 120;
 
         const color = `hsl(${Math.round(hue)}, 85%, 55%)`;
@@ -194,7 +194,7 @@ export const renderWeeklyChart = (data) => {
     chartInstances.weekly = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: ['L', 'M', 'M', 'J', 'V', 'S', 'D'],
+            labels: dayLabels,
             datasets: [{
                 label: 'Sesiones',
                 data: bars,
@@ -221,11 +221,7 @@ export const renderWeeklyChart = (data) => {
                     }
                 },
                 y: {
-                    grid: {
-                        display: true,
-                        color: getStyle('--border-color'),
-                        tickLength: 0
-                    },
+                    grid: { display: true, color: getStyle('--border-color'), tickLength: 0 },
                     ticks: { color: getStyle('--text-primary'), font: { weight: 'bold' } }
                 }
             },
@@ -250,7 +246,6 @@ export const renderWeeklyChart = (data) => {
             }
         }
     });
-
 };
 
 
