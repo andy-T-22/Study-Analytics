@@ -5,7 +5,9 @@ import { openSessionDetails } from "../main.js"; // Depends on main for modal op
 let chartInstances = {
     eff: null,
     sub: null,
-    int: null
+    int: null,
+    timeline: null,
+    weekly: null
 };
 
 export const updateCharts = () => {
@@ -43,7 +45,7 @@ export const updateCharts = () => {
     renderEfficiencyChart(efficiency);
     renderSubjectsChart(subjectMap);
     renderInterruptionsChart(interruptionMap);
-    renderHeatmap(filteredData);
+    renderWeeklyChart(filteredData);
 };
 
 // --- CHART RENDERS ---
@@ -118,99 +120,260 @@ const renderInterruptionsChart = (map) => {
     });
 };
 
-// --- HEATMAP ---
-const renderHeatmap = (data) => {
-    const grid = document.getElementById('heatmap-grid');
-    const labelsContainer = document.getElementById('heatmap-labels-x');
-    if (!grid || !labelsContainer) return;
+// --- WEEKLY TIMELINE (Previously Heatmap) ---
+export const renderWeeklyChart = (data) => {
+    const ctx = document.getElementById('chart-weekly')?.getContext('2d');
+    if (!ctx) return;
 
-    grid.innerHTML = '';
-    labelsContainer.innerHTML = '';
+    // Destroy if exists (we reuse 'int' slot or better create a new one 'weekly')
+    if (chartInstances.weekly) chartInstances.weekly.destroy();
 
-    // Logic from original code directly adapted
+    // Data Processing
+    // We want to show sessions for the relevant week relative to the filter, 
+    // BUT usually 'dashboard' shows "This Week" or filtered range. 
+    // The previous heatmap used filteredData directly. We will stick to that.
+
+    // Map sesssions to Bars
+    const bars = [];
+    const colors = [];
+
+    // 1. Calculate Range (Min/Max Hours)
     let minH = 24, maxH = 0;
-    if (data.length === 0) { minH = 8; maxH = 20; }
-    else {
+
+    if (data.length === 0) {
+        minH = 8; maxH = 20; // Default view if empty
+    } else {
         data.forEach(s => {
-            const h1 = new Date(s.startTime).getHours();
-            let h2 = new Date(s.endTime).getHours();
-            if (h2 < h1) h2 = 23;
-            if (h1 < minH) minH = h1;
-            if (h2 > maxH) maxH = h2;
+            const dStart = new Date(s.startTime);
+            const dEnd = new Date(s.endTime);
+
+            const startH = dStart.getHours() + dStart.getMinutes() / 60;
+            let endH = dEnd.getHours() + dEnd.getMinutes() / 60;
+            if (endH < startH) endH = 24;
+
+            if (startH < minH) minH = startH;
+            if (endH > maxH) maxH = endH;
         });
-        minH = Math.max(0, minH - 1);
-        maxH = Math.min(23, maxH + 1);
-    }
-    if (minH >= maxH) { minH = 0; maxH = 23; }
-
-    const totalCols = maxH - minH + 1;
-    grid.style.gridTemplateColumns = `repeat(${totalCols}, 1fr)`;
-
-    // X Labels
-    for (let h = minH; h <= maxH; h++) {
-        if (h === minH || h === maxH || h % 2 === 0) {
-            const span = document.createElement('span');
-            span.className = 'text-[10px] text-secondary font-mono absolute font-bold whitespace-nowrap';
-            const colIndex = h - minH;
-            const pct = ((colIndex + 0.5) / totalCols) * 100;
-            span.style.left = `${pct}%`;
-            span.style.transform = 'translateX(-50%)';
-            span.textContent = `${h}h`;
-            labelsContainer.appendChild(span);
-        }
+        // Add padding
+        minH = Math.max(0, Math.floor(minH) - 1);
+        maxH = Math.min(24, Math.ceil(maxH) + 1);
     }
 
-    // Buckets
-    const buckets = Array(7).fill().map(() => Array(totalCols).fill().map(() => ({ net: 0, gross: 0, count: 0, ids: [] })));
+
 
     data.forEach(s => {
-        const date = new Date(s.startTime);
-        let dayIndex = date.getDay() - 1;
+        const d = new Date(s.startTime);
+        let dayIndex = d.getDay() - 1;
         if (dayIndex < 0) dayIndex = 6;
 
-        // Simple bucket filling for hourly blocks
-        const startH = date.getHours();
-        const endH = new Date(s.endTime).getHours();
+        const dayLabels = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+        const yVal = dayLabels[dayIndex];
 
-        for (let h = startH; h <= endH; h++) {
-            if (h >= minH && h <= maxH) { // only if inside visible range
-                const c = h - minH;
-                const b = buckets[dayIndex][c];
-                b.net += (s.netDuration || 0);
-                b.gross += (s.grossDuration || 0);
-                b.count++;
-                if (!b.ids.includes(s.id)) b.ids.push(s.id);
+        const startH = d.getHours() + d.getMinutes() / 60;
+        let endD = new Date(s.endTime);
+        let endH = endD.getHours() + endD.getMinutes() / 60;
+        if (endH < startH) endH = 24.0;
+
+        // 3. Gradient Color Logic (50%=Red -> 100%=Green)
+        const eff = s.efficiency || 0;
+        let hue = 0;
+        if (eff <= 50) hue = 0;
+        else if (eff >= 100) hue = 120;
+        else hue = ((eff - 50) / 50) * 120;
+
+        const color = `hsl(${Math.round(hue)}, 85%, 55%)`;
+
+        bars.push({
+            x: [startH, endH],
+            y: yVal,
+            session: s
+        });
+        colors.push(color);
+    });
+
+    chartInstances.weekly = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['L', 'M', 'M', 'J', 'V', 'S', 'D'],
+            datasets: [{
+                label: 'Sesiones',
+                data: bars,
+                backgroundColor: colors,
+                borderRadius: 4,
+                barPercentage: 0.6,
+                borderSkipped: false
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    type: 'linear',
+                    min: minH,
+                    max: maxH,
+                    grid: { color: getStyle('--border-color') },
+                    ticks: {
+                        stepSize: 2,
+                        callback: (val) => `${val}h`,
+                        color: getStyle('--text-secondary')
+                    }
+                },
+                y: {
+                    grid: {
+                        display: true,
+                        color: getStyle('--border-color'),
+                        tickLength: 0
+                    },
+                    ticks: { color: getStyle('--text-primary'), font: { weight: 'bold' } }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (c) => {
+                            const s = c.raw.session;
+                            const dur = Math.round(s.netDuration / 60000);
+                            return `${s.subject}: ${dur} min (${s.efficiency}%)`;
+                        }
+                    }
+                }
+            },
+            onClick: (e, els) => {
+                if (els.length > 0) {
+                    const idx = els[0].index;
+                    const s = bars[idx].session;
+                    if (s) openSessionDetails(s.id);
+                }
             }
         }
     });
 
-    // Render Grid
-    for (let d = 0; d < 7; d++) {
-        for (let c = 0; c < totalCols; c++) {
-            const el = document.createElement('div');
-            const b = buckets[d][c];
-
-            if (b.count > 0) {
-                let eff = b.gross > 0 ? Math.round((b.net / b.gross) * 100) : 0;
-                let hue = eff <= 50 ? (eff / 50) * 60 : 60 + ((eff - 50) / 50) * 110;
-                const alpha = Math.min(1, 0.65 + (b.count * 0.1));
-
-                el.style.backgroundColor = `hsla(${hue}, ${eff > 80 ? '100%' : '90%'}, ${eff > 90 ? '50%' : '55%'}, ${alpha})`;
-                el.style.borderRadius = '30%';
-                el.classList.add('cursor-pointer', 'transition-all', 'hover:scale-110', 'hover:brightness-110', 'hover:z-50');
-                el.onclick = () => handleHeatmapClick(b.ids);
-                el.title = `Eficiencia: ${eff}% (${b.count} sesiones)`;
-            } else {
-                el.style.backgroundColor = 'transparent';
-            }
-            grid.appendChild(el);
-        }
-    }
 };
 
-const handleHeatmapClick = (ids) => {
-    // Simply open the first one for now, or show selector (simplified)
-    if (ids.length > 0) openSessionDetails(ids[0]);
+
+// --- TIMELINE ---
+export const renderTimeline = (session) => {
+    const ctx = document.getElementById('chart-timeline')?.getContext('2d');
+    if (!ctx) return;
+
+    if (chartInstances.timeline) chartInstances.timeline.destroy();
+
+    const startTime = session.startTime;
+    const endTime = session.endTime;
+    const interruptions = session.interruptions || [];
+
+    // Sort interruptions just in case
+    interruptions.sort((a, b) => a.start - b.start);
+
+    const studySegments = [];
+    const pauseSegments = [];
+
+    let cursor = startTime;
+
+    interruptions.forEach(int => {
+        // Study segment before this pause
+        if (int.start > cursor) {
+            studySegments.push([cursor, int.start]);
+        }
+        // Pause segment
+        // Ensure pause has duration
+        let pEnd = int.end;
+        if (!pEnd && int.duration) pEnd = int.start + int.duration;
+        if (!pEnd) pEnd = cursor; // Fallback
+
+        // Store data with reason for tooltip
+        pauseSegments.push({
+            x: [int.start, pEnd],
+            y: 'Línea de Tiempo',
+            reason: int.reason || 'Pausa'
+        });
+
+        cursor = pEnd;
+    });
+
+    // Final study segment
+    if (endTime > cursor) {
+        studySegments.push([cursor, endTime]);
+    }
+
+    // Prepare Datasets
+    // We use floating bars: data format for x is [start, end]
+
+    const dsStudy = {
+        label: 'Estudio',
+        data: studySegments.map(s => ({ x: s, y: 'Línea de Tiempo' })),
+        backgroundColor: getStyle('--acc-green'),
+        borderRadius: 0,
+        barPercentage: 1.0,
+        categoryPercentage: 1.0
+    };
+
+    const dsPause = {
+        label: 'Pausa',
+        data: pauseSegments, // Objects {x:[], y, reason}
+        backgroundColor: getStyle('--acc-red'),
+        borderRadius: 0,
+        barPercentage: 1.0,
+        categoryPercentage: 1.0
+    };
+
+    chartInstances.timeline = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Línea de Tiempo'],
+            datasets: [dsStudy, dsPause]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    stacked: false, // Don't stack time values
+                    type: 'linear',
+                    min: startTime,
+                    max: endTime,
+                    grid: { color: getStyle('--border-color') },
+                    ticks: {
+                        color: getStyle('--text-secondary'),
+                        callback: (val) => {
+                            const d = new Date(val);
+                            return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        },
+                        maxRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: 6
+                    }
+                },
+                y: {
+                    stacked: true, // Stack on the category axis to share the row
+                    display: false
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: { color: getStyle('--text-primary'), font: { size: 10 } }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx) => {
+                            const showReason = ctx.raw.reason ? ` (${ctx.raw.reason})` : '';
+                            const d = ctx.raw.x || ctx.raw; // handle object or array
+                            const start = d[0];
+                            const end = d[1];
+                            const durMin = Math.round((end - start) / 60000);
+                            return `${ctx.dataset.label}${showReason}: ${durMin} min`;
+                        }
+                    }
+                }
+            }
+        }
+    });
 };
 
 

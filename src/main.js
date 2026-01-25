@@ -2,7 +2,7 @@ import './style.css';
 import { initAuth, getCurrentUser } from './modules/auth.js';
 import { initThemes } from './modules/themes.js';
 import { initTimer } from './modules/timer.js';
-import { updateCharts, applyHistoryFilters } from './modules/charts.js'; // Ensure correct imports
+import { updateCharts, applyHistoryFilters, renderTimeline } from './modules/charts.js'; // Ensure correct imports
 import { formatTime, showAlert, showConfirm } from './modules/utils.js';
 import { db } from './services/firebaseConfig.js';
 import { doc, updateDoc, deleteDoc, addDoc, collection } from 'firebase/firestore'; loadHistory();
@@ -127,6 +127,9 @@ export const openSessionDetails = async (id) => {
     // Lock UI
     disableEditSession();
     document.getElementById('modal-detail').classList.remove('hidden');
+
+    // Render Timeline (must be after modal is visible for correct sizing)
+    setTimeout(() => renderTimeline(session), 50);
 };
 
 const disableEditSession = () => {
@@ -167,27 +170,97 @@ const toggleEditSession = () => {
 };
 
 const saveSessionChanges = async () => {
-    // Logic for saving edits (Basic implementation)
-    // For brevity, migrating the core logic:
-    const newSub = document.getElementById('detail-subject').value;
-    const grossMs = (parseInt(document.getElementById('detail-net-edit').value) || 0) * 60000 + (parseInt(document.getElementById('detail-pause-edit').value) || 0) * 60000;
-    // We would need robust recalculation here.
-    // Simplifying: Just update Subject/Method for MVP migration step, or assume time logic.
-    // Users asked for "Professionalization", I should respect the logic.
-    // ... [Logic similar to old index.html would go here]
+    try {
+        const user = getCurrentUser();
+        if (!currentDetailId) return;
 
-    // For now, let's implement the basic fields Update:
-    const user = getCurrentUser();
-    if (user && currentDetailId) {
-        try {
+        const newSub = document.getElementById('detail-subject').value;
+        const newMet = document.getElementById('detail-method').value;
+
+        // 1. Get Values
+        const newNet = (parseInt(document.getElementById('detail-net-edit').value) || 0) * 60000;
+        const newPauseTotal = (parseInt(document.getElementById('detail-pause-edit').value) || 0) * 60000;
+        const newGross = newNet + newPauseTotal;
+        const newEff = newGross > 0 ? Math.round((newNet / newGross) * 100) : 0;
+
+        // 2. Find Session
+        const session = window.globalSessionCache.find(s => s.id === currentDetailId);
+        if (!session) return showAlert("Error: Sesión no encontrada en caché.");
+
+        // Safe Date Parsing
+        const getMs = (val) => val instanceof Date ? val.getTime() : new Date(val).getTime();
+        const startMs = getMs(session.startTime);
+
+        // Check Validity
+        if (isNaN(startMs)) return showAlert("Error: Fecha de inicio inválida.");
+
+        // 3. Handle Interruptions
+        let currentInts = session.interruptions ? [...session.interruptions] : [];
+        let currentSum = currentInts.reduce((acc, i) => acc + (i.duration || 0), 0);
+        let diff = newPauseTotal - currentSum;
+
+        if (diff > 0) {
+            let oldEndMs = getMs(session.endTime);
+            let anchor = !isNaN(oldEndMs) ? oldEndMs : (startMs + newNet);
+
+            currentInts.push({
+                reason: "Ajuste Manual",
+                start: anchor,
+                end: anchor + diff,
+                duration: diff
+            });
+        } else if (diff < 0) {
+            let toRemove = Math.abs(diff);
+            for (let i = currentInts.length - 1; i >= 0; i--) {
+                if (toRemove <= 0) break;
+                let int = currentInts[i];
+                if (int.duration >= toRemove) {
+                    int.duration -= toRemove;
+                    int.end -= toRemove;
+                    toRemove = 0;
+                } else {
+                    toRemove -= int.duration;
+                    currentInts.splice(i, 1);
+                }
+            }
+        }
+
+        // 4. Recalculate EndTime
+        const newEndTime = new Date(startMs + newGross);
+
+        // Update Local Cache Object in memory
+        session.subject = newSub;
+        session.method = newMet;
+        session.netDuration = newNet;
+        session.grossDuration = newGross;
+        session.efficiency = newEff;
+        session.interruptions = currentInts;
+        session.endTime = newEndTime;
+
+        if (user) {
             await updateDoc(doc(db, "study_sessions", currentDetailId), {
                 subject: newSub,
-                method: document.getElementById('detail-method').value
+                method: newMet,
+                netDuration: newNet,
+                grossDuration: newGross,
+                efficiency: newEff,
+                interruptions: currentInts,
+                endTime: newEndTime
             });
             showAlert("Datos actualizados.");
-            disableEditSession();
-            document.getElementById('modal-detail').classList.add('hidden');
-        } catch (e) { console.error(e); }
+        } else {
+            // Guest Mode
+            const h = window.globalSessionCache;
+            localStorage.setItem('guest_study_history', JSON.stringify(h));
+            showAlert("Datos actualizados (Local).");
+            loadHistory();
+        }
+
+        disableEditSession();
+        openSessionDetails(currentDetailId);
+    } catch (err) {
+        console.error("Save error:", err);
+        showAlert("Ocurrió un error al guardar.");
     }
 };
 

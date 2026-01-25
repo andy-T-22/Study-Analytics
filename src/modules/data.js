@@ -75,6 +75,10 @@ export const loadHistory = () => {
             snapshot.forEach(doc => {
                 let d = doc.data();
                 d.id = doc.id;
+                // Normalize Timestamps
+                if (d.startTime && typeof d.startTime.toDate === 'function') d.startTime = d.startTime.toDate();
+                if (d.endTime && typeof d.endTime.toDate === 'function') d.endTime = d.endTime.toDate();
+                if (d.createdAt && typeof d.createdAt.toDate === 'function') d.createdAt = d.createdAt.toDate();
                 docs.push(d);
             });
             window.globalSessionCache = docs;
@@ -86,8 +90,12 @@ export const loadHistory = () => {
 
     } else {
         const local = JSON.parse(localStorage.getItem('guest_study_history') || '[]');
-        // Add fake indices
-        local.forEach((item, idx) => item.id = idx);
+        local.forEach((item, idx) => {
+            item.id = item.id || idx;
+            if (item.startTime) item.startTime = new Date(item.startTime);
+            if (item.endTime) item.endTime = new Date(item.endTime);
+            if (item.createdAt) item.createdAt = new Date(item.createdAt);
+        });
         window.globalSessionCache = local;
         processDataChange(local);
     }
