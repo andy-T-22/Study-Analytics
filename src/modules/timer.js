@@ -38,9 +38,14 @@ export const initTimer = () => {
     document.getElementById('btn-stop-session').onclick = stopSession;
 
     // Pause Logic Buttons
-    document.querySelectorAll('.btn-pause-reason').forEach(btn => {
-        btn.onclick = () => confirmPause(btn.getAttribute('data-reason'));
-    });
+    // Pause Logic Buttons (Delegation for dynamic items)
+    const grid = document.getElementById('pause-reasons-grid');
+    if (grid) {
+        grid.onclick = (e) => {
+            const btn = e.target.closest('.btn-pause-reason');
+            if (btn) confirmPause(btn.getAttribute('data-reason'));
+        };
+    }
     document.getElementById('btn-custom-pause').onclick = () => {
         const r = prompt("Motivo:");
         if (r) confirmPause(r);

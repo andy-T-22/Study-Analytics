@@ -3,13 +3,12 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-    apiKey: "AIzaSyDDTOTQDYxbpRT547Cf0-hO014pl3T3JUo",
-    authDomain: "mi-planner-88ef4.firebaseapp.com",
-    projectId: "mi-planner-88ef4",
-    storageBucket: "mi-planner-88ef4.firebasestorage.app",
-    messagingSenderId: "252241778516",
-    appId: "1:252241778516:web:e87349948d01f34ca59ac1",
-    measurementId: "G-JGWJFMWD9M"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 // Initialize Firebase

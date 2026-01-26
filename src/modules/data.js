@@ -4,10 +4,12 @@ import { renderHistoryList, applyHistoryFilters, updateCharts } from "./charts.j
 import { showAlert, showConfirm } from "./utils.js";
 
 // Global Cache for Analysis
+// Global Cache for Analysis
 window.globalSessionCache = [];
 
 let subjects = [];
 let methods = [];
+let reasons = [];
 let currentUserRef = null;
 
 export const initData = async (user) => {
@@ -28,29 +30,34 @@ const loadPreferences = async () => {
             const data = snap.data();
             subjects = data.subjects || defaultSubjects();
             methods = data.methods || defaultMethods();
+            reasons = data.reasons || defaultReasons();
         } else {
             // Initial Save
             subjects = defaultSubjects();
             methods = defaultMethods();
-            await setDoc(docRef, { subjects, methods });
+            reasons = defaultReasons();
+            await setDoc(docRef, { subjects, methods, reasons });
         }
     } else {
         // LocalStorage Strategy (Legacy/Guest)
         subjects = JSON.parse(localStorage.getItem('study_subjects') || JSON.stringify(defaultSubjects()));
         methods = JSON.parse(localStorage.getItem('study_methods') || JSON.stringify(defaultMethods()));
+        reasons = JSON.parse(localStorage.getItem('study_reasons') || JSON.stringify(defaultReasons()));
     }
     renderAllDropdowns();
 };
 
 const defaultSubjects = () => ["Matemáticas", "Historia", "Programación", "Idioma"];
 const defaultMethods = () => ["Leer", "Resumir", "Ejercicios", "Repaso"];
+const defaultReasons = () => ["Descanso", "Celular", "Llamada", "Comida"];
 
 const savePreferences = async () => {
     if (currentUserRef) {
         try {
             await updateDoc(doc(db, 'user_preferences', currentUserRef.uid), {
                 subjects,
-                methods
+                methods,
+                reasons
             });
         } catch (e) {
             console.error("Error saving prefs:", e);
@@ -58,6 +65,7 @@ const savePreferences = async () => {
     } else {
         localStorage.setItem('study_subjects', JSON.stringify(subjects));
         localStorage.setItem('study_methods', JSON.stringify(methods));
+        localStorage.setItem('study_reasons', JSON.stringify(reasons));
     }
     renderAllDropdowns();
 };
@@ -135,10 +143,35 @@ const renderAllDropdowns = () => {
     };
     popFilter('dash-filter-subject', subjects);
     popFilter('hist-filter-subject', subjects);
+
+    renderPauseButtons();
+};
+
+const renderPauseButtons = () => {
+    const container = document.getElementById('pause-reasons-grid');
+    if (!container) return;
+
+    const customBtn = document.getElementById('btn-custom-pause');
+    // Clear existing dynamic buttons (siblings of customBtn)
+    // Or simpler: clear all, reconstruct customBtn? 
+    // No, customBtn has binding. 
+    // Select all .btn-pause-reason and remove
+    container.querySelectorAll('.btn-pause-reason').forEach(el => el.remove());
+
+    reasons.forEach(r => {
+        const btn = document.createElement('button');
+        btn.className = "btn-pause-reason p-4 rounded-xl bg-main hover:bg-acc-blue text-primary text-sm font-bold transition-colors";
+        btn.setAttribute('data-reason', r);
+        // Maybe map emojis later, for now just text
+        btn.textContent = r;
+
+        if (customBtn) container.insertBefore(btn, customBtn);
+        else container.appendChild(btn);
+    });
 };
 
 // --- MANAGER UI LOGIC ---
-let currentManagerType = null; // 'Subjects' or 'Methods'
+let currentManagerType = null; // 'Subjects', 'Methods', or 'Reasons'
 
 const setupManagerUI = () => {
     // Open Buttons
@@ -148,6 +181,10 @@ const setupManagerUI = () => {
     document.querySelectorAll('.btn-manage-methods').forEach(b => {
         b.onclick = () => openManager('Methods');
     });
+    // Pause Reasons Manager
+    document.querySelectorAll('.btn-manage-reasons').forEach(b => {
+        b.onclick = () => openManager('Reasons');
+    });
 
     // Close Button
     document.getElementById('btn-close-manager').onclick = closeManager;
@@ -156,7 +193,12 @@ const setupManagerUI = () => {
 
 const openManager = (type) => {
     currentManagerType = type;
-    document.getElementById('manager-title').textContent = type === 'Subjects' ? 'Gestionar Materias' : 'Gestionar Métodos';
+    let title = '';
+    if (type === 'Subjects') title = 'Gestionar Materias';
+    else if (type === 'Methods') title = 'Gestionar Métodos';
+    else if (type === 'Reasons') title = 'Gestionar Motivos';
+
+    document.getElementById('manager-title').textContent = title;
     document.getElementById('modal-manager').classList.remove('hidden');
     renderManagerList();
 };
@@ -167,7 +209,11 @@ const closeManager = () => {
 };
 
 const renderManagerList = () => {
-    const listData = currentManagerType === 'Subjects' ? subjects : methods;
+    let listData = [];
+    if (currentManagerType === 'Subjects') listData = subjects;
+    else if (currentManagerType === 'Methods') listData = methods;
+    else if (currentManagerType === 'Reasons') listData = reasons;
+
     const container = document.getElementById('manager-list');
     container.innerHTML = '';
 
@@ -210,7 +256,11 @@ const enableEdit = (index, iconEl) => {
 };
 
 const saveEdit = (index, newValue) => {
-    const listData = currentManagerType === 'Subjects' ? subjects : methods;
+    let listData = null;
+    if (currentManagerType === 'Subjects') listData = subjects;
+    else if (currentManagerType === 'Methods') listData = methods;
+    else if (currentManagerType === 'Reasons') listData = reasons;
+
     if (newValue.trim()) {
         listData[index] = newValue.trim();
         savePreferences();
@@ -219,7 +269,11 @@ const saveEdit = (index, newValue) => {
 };
 
 const deleteItem = (index) => {
-    const listData = currentManagerType === 'Subjects' ? subjects : methods;
+    let listData = null;
+    if (currentManagerType === 'Subjects') listData = subjects;
+    else if (currentManagerType === 'Methods') listData = methods;
+    else if (currentManagerType === 'Reasons') listData = reasons;
+
     showConfirm("Confirmar", "¿Eliminar este elemento?", () => {
         listData.splice(index, 1);
         savePreferences();
@@ -228,7 +282,11 @@ const deleteItem = (index) => {
 };
 
 const addManagerItem = () => {
-    const listData = currentManagerType === 'Subjects' ? subjects : methods;
+    let listData = null;
+    if (currentManagerType === 'Subjects') listData = subjects;
+    else if (currentManagerType === 'Methods') listData = methods;
+    else if (currentManagerType === 'Reasons') listData = reasons;
+
     listData.push("Nuevo Elemento");
     savePreferences().then(() => {
         renderManagerList();
@@ -245,3 +303,5 @@ const addManagerItem = () => {
 
 export const getSubjects = () => subjects;
 export const getMethods = () => methods;
+export const getReasons = () => reasons;
+
