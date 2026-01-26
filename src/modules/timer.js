@@ -105,7 +105,9 @@ const tick = () => {
     const gross = now - activeSession.startTime;
     const net = Math.max(0, gross - totalPaused);
 
-    dom.display().textContent = formatTime(net, appSettings.showSeconds);
+    const timeStr = formatTime(net, appSettings.showSeconds);
+    dom.display().textContent = timeStr;
+    document.title = `${timeStr} - Focus Analytics`;
 };
 
 // --- PAUSE ---
@@ -136,7 +138,9 @@ const pauseTimerUI = (session) => {
     const now = session.pauseStart || Date.now();
     const totalPaused = session.interruptions.reduce((acc, i) => acc + (i.duration || 0), 0);
     const net = Math.max(0, (now - session.startTime) - totalPaused);
-    dom.display().textContent = formatTime(net, appSettings.showSeconds);
+    const timeStr = formatTime(net, appSettings.showSeconds);
+    dom.display().textContent = timeStr;
+    document.title = `⏸️ ${timeStr} - Focus Analytics`;
 };
 
 const resumeSession = () => {
@@ -185,6 +189,7 @@ const stopSession = async () => {
     dom.active().classList.add('hidden');
     dom.setup().classList.remove('hidden');
     dom.display().textContent = "00:00";
+    document.title = "Focus Analytics";
 
     // Save
     const user = getCurrentUser();
