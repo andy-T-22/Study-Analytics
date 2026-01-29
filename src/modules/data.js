@@ -2,8 +2,9 @@ import { db } from "../services/firebaseConfig.js";
 import { doc, getDoc, setDoc, onSnapshot, collection, query, where, updateDoc } from "firebase/firestore";
 import { renderHistoryList, applyHistoryFilters, updateCharts } from "./charts.js"; // Circular dep potential? We'll see. Ideally signals.
 import { showAlert, showConfirm } from "./utils.js";
+import { initGoals } from "./goals.js";
+import { renderGoals } from "./goalsUI.js";
 
-// Global Cache for Analysis
 // Global Cache for Analysis
 window.globalSessionCache = [];
 
@@ -16,6 +17,12 @@ export const initData = async (user) => {
     currentUserRef = user;
     await loadPreferences();
     loadHistory(); // Start listener
+
+    // Init Goals Listener
+    initGoals(user, (goals) => {
+        renderGoals(goals);
+    });
+
     setupManagerUI();
 };
 

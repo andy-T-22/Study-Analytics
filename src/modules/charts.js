@@ -77,13 +77,13 @@ const renderSubjectsChart = (map) => {
     if (chartInstances.sub) chartInstances.sub.destroy();
 
     const labels = Object.keys(map);
-    const mins = Object.values(map).map(m => Math.floor(m / 60000));
+    const hours = Object.values(map).map(m => parseFloat((m / 3600000).toFixed(1))); // ms -> hours
 
     chartInstances.sub = new Chart(ctx, {
         type: 'bar',
         data: {
             labels,
-            datasets: [{ label: 'Minutos', data: mins, backgroundColor: getStyle('--acc-blue'), borderRadius: 6 }]
+            datasets: [{ label: 'Horas', data: hours, backgroundColor: getStyle('--acc-blue'), borderRadius: 6 }]
         },
         options: {
             responsive: true, maintainAspectRatio: false,

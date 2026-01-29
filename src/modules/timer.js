@@ -61,12 +61,43 @@ export const initTimer = () => {
     const btnSec = document.getElementById('btn-toggle-seconds');
     if (btnSec) btnSec.onclick = toggleSeconds;
 
+    // Goal Filter Logic
+    document.getElementById('sel-subject').onchange = updateGoalDropdown;
+    document.addEventListener('goals-updated', updateGoalDropdown); // Listen for data changes
+
     renderSettingsUI();
+};
+
+const updateGoalDropdown = () => {
+    const sub = document.getElementById('sel-subject').value;
+    const goalWrap = document.getElementById('setup-goal-wrapper');
+    const goalSel = document.getElementById('sel-goal');
+
+    if (!sub) {
+        goalWrap.classList.add('hidden');
+        return;
+    }
+
+    // dynamic import to avoid circular dependency issues at top level if not careful, 
+    // but we can assume getCurrentGoals is available if we import it.
+    import('./goals.js').then(({ getCurrentGoals }) => {
+        const goals = getCurrentGoals().filter(g => g.subject === sub && g.status === 'active');
+
+        if (goals.length > 0) {
+            goalSel.innerHTML = '<option value="">-- Sin vincular --</option>' +
+                goals.map(g => `<option value="${g.id}">${g.nombre}</option>`).join('');
+            goalWrap.classList.remove('hidden');
+        } else {
+            goalWrap.classList.add('hidden');
+            goalSel.value = "";
+        }
+    });
 };
 
 const startSession = () => {
     const sub = document.getElementById('sel-subject').value;
     const met = document.getElementById('sel-method').value;
+    const goalId = document.getElementById('sel-goal').value;
 
     if (!sub) return showAlert("Selecciona una materia");
 
@@ -74,6 +105,7 @@ const startSession = () => {
         uid: getCurrentUser() ? getCurrentUser().uid : 'guest',
         subject: sub,
         method: met,
+        goalId: goalId || null,
         startTime: Date.now(),
         interruptions: [],
         status: 'running'
@@ -196,6 +228,14 @@ const stopSession = async () => {
     if (user) {
         try {
             await addDoc(collection(db, 'study_sessions'), sessionData);
+
+            // UPDATE GOAL IF LINKED
+            if (sessionData.goalId) {
+                import('./goals.js').then(({ incrementGoalProgress }) => {
+                    incrementGoalProgress(sessionData.goalId, sessionData.netDuration);
+                });
+            }
+
             showAlert(`Guardado en Nube. Eficiencia: ${eff}%`);
         } catch (e) {
             console.error(e);
@@ -205,6 +245,13 @@ const stopSession = async () => {
         const h = JSON.parse(localStorage.getItem('guest_study_history') || '[]');
         h.push(sessionData);
         localStorage.setItem('guest_study_history', JSON.stringify(h));
+
+        if (sessionData.goalId) {
+            import('./goals.js').then(({ incrementGoalProgress }) => {
+                incrementGoalProgress(sessionData.goalId, sessionData.netDuration);
+            });
+        }
+
         showAlert(`Guardado Local. Eficiencia: ${eff}%`);
         loadHistory();
     }

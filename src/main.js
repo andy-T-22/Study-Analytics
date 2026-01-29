@@ -23,9 +23,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
 const bindGlobalEvents = () => {
     // Tab Switching
-    ['tracker', 'dashboard', 'history'].forEach(t => {
+    ['tracker', 'dashboard', 'history', 'goals'].forEach(t => {
         document.getElementById('tab-' + t).onclick = () => switchTab(t);
     });
+
+    // Goals UI
+    {
+        const btnAdd = document.getElementById('btn-add-goal');
+        if (btnAdd) btnAdd.onclick = () => import('./modules/goalsUI.js').then(m => m.openCreateGoalModal());
+
+        const btnSave = document.getElementById('btn-save-goal');
+        if (btnSave) btnSave.onclick = () => import('./modules/goalsUI.js').then(m => m.saveNewGoal());
+    }
 
     // Mobile/General Settings
     document.getElementById('btn-settings-toggle').onclick = () => {
@@ -47,7 +56,8 @@ const bindGlobalEvents = () => {
     document.getElementById('hist-filter-subject').onchange = () => applyHistoryFilters();
 
     // Manual Entry
-    document.getElementById('btn-manual-entry').onclick = openManualEntry;
+    // Manual Entry
+    document.getElementById('btn-manual-entry').onclick = startNewSession;
     document.getElementById('btn-cancel-manual').onclick = () => document.getElementById('modal-manual').classList.add('hidden');
     document.getElementById('btn-save-manual').onclick = saveManualEntry;
 
@@ -60,7 +70,7 @@ const bindGlobalEvents = () => {
 
 // --- NAVIGATION ---
 const switchTab = (tab) => {
-    ['tracker', 'dashboard', 'history'].forEach(t => {
+    ['tracker', 'dashboard', 'history', 'goals'].forEach(t => {
         const btn = document.getElementById('tab-' + t);
         const view = document.getElementById('view-' + t);
         if (t === tab) {
@@ -86,10 +96,58 @@ const toggleCustomDate = (prefix) => {
     else applyHistoryFilters();
 };
 
+// --- NEW SESSION LOGIC ---
+export const startNewSession = async () => {
+    // 1. Create Default Data
+    const now = new Date();
+    // Round to nearest minute
+    now.setSeconds(0, 0);
+
+    // Get Subjects to pick first default
+    let defaultSub = "General";
+    try {
+        const { getSubjects } = await import('./modules/data.js');
+        const subs = getSubjects();
+        if (subs.length > 0) defaultSub = subs[0];
+    } catch (e) { console.warn("No subjects loaded"); }
+
+    const draftId = `draft_${Date.now()}`;
+    const draftSession = {
+        id: draftId,
+        uid: getCurrentUser() ? getCurrentUser().uid : 'guest',
+        subject: defaultSub,
+        method: "Cronómetro",
+        startTime: now.getTime(),
+        endTime: now.getTime(),
+        grossDuration: 0,
+        netDuration: 0,
+        efficiency: 100, // Default optimistic?
+        interruptions: [],
+        goalId: null,
+        isDraft: true // Flag to identify
+    };
+
+    // 2. Inject into Cache
+    if (!window.globalSessionCache) window.globalSessionCache = [];
+    window.globalSessionCache.unshift(draftSession);
+
+    // 3. Open Details
+    await openSessionDetails(draftId);
+
+    // 4. Set Edit Mode immediately
+    toggleEditSession();
+
+    // 5. UI Adjustments
+    document.getElementById('btn-delete-session').classList.add('hidden'); // No delete for draft
+};
+
 // --- SESSION DETAIL LOGIC ---
 let currentDetailId = null;
 
 export const openSessionDetails = async (id) => {
+    // Expose for other modules if needed (e.g. goalsUI)
+    window.openSessionDetails = openSessionDetails;
+
     const data = window.globalSessionCache || [];
     const session = data.find(s => s.id === id);
     if (!session) return;
@@ -114,15 +172,27 @@ export const openSessionDetails = async (id) => {
     document.getElementById('detail-net-edit').value = Math.floor((session.netDuration || 0) / 60000);
     document.getElementById('detail-pause-edit').value = pauseMins;
 
-    // Setup Dropdowns
-    // Get cached lists from DOM or re-fetch? It's easier to grab existing options from the Manual Entry dropdowns which are kept sync
-    const subOpts = document.getElementById('man-subject').innerHTML;
-    const metOpts = document.getElementById('man-method').innerHTML;
-    document.getElementById('detail-subject').innerHTML = subOpts;
-    document.getElementById('detail-method').innerHTML = metOpts;
+    // Populate dropdowns (disabled initially)
+    const subSel = document.getElementById('detail-subject');
+    const methSel = document.getElementById('detail-method');
+    const goalSel = document.getElementById('detail-goal');
 
-    document.getElementById('detail-subject').value = session.subject;
-    document.getElementById('detail-method').value = session.method;
+    // Re-populate to ensure fresh list
+    import('./modules/data.js').then(({ getSubjects, getMethods }) => {
+        subSel.innerHTML = getSubjects().map(s => `<option value="${s}">${s}</option>`).join('');
+        methSel.innerHTML = getMethods().map(m => `<option value="${m}">${m}</option>`).join('');
+
+        subSel.value = session.subject;
+        methSel.value = session.method;
+    });
+
+    // Populate Goals (filtered by subject)
+    import('./modules/goals.js').then(({ getGoalsBySubject }) => {
+        const goals = getGoalsBySubject(session.subject);
+        goalSel.innerHTML = '<option value="">-- Sin vincular --</option>' +
+            goals.map(g => `<option value="${g.id}">${g.nombre}</option>`).join('');
+        goalSel.value = session.goalId || "";
+    });
 
     // Lock UI
     disableEditSession();
@@ -143,7 +213,7 @@ const disableEditSession = () => {
         if (dis) el.classList.add('opacity-70', 'bg-gray-50');
         else el.classList.remove('opacity-70', 'bg-gray-50');
     };
-    ['detail-subject', 'detail-method', 'detail-date-edit', 'detail-start-edit', 'detail-end-edit'].forEach(id => set(id, true));
+    ['detail-subject', 'detail-method', 'detail-goal', 'detail-date-edit', 'detail-start-edit', 'detail-end-edit'].forEach(id => set(id, true));
 
     document.getElementById('detail-net-edit-wrapper').classList.add('hidden');
     document.getElementById('detail-net').classList.remove('hidden');
@@ -152,6 +222,9 @@ const disableEditSession = () => {
 
     document.getElementById('btn-edit-session').classList.remove('hidden');
     document.getElementById('btn-save-session').classList.add('hidden');
+
+    // Ensure Delete is visible (might have been hidden by startNewSession)
+    document.getElementById('btn-delete-session').classList.remove('hidden');
 };
 
 const toggleEditSession = () => {
@@ -161,7 +234,7 @@ const toggleEditSession = () => {
         if (dis) el.classList.add('opacity-70', 'bg-gray-50');
         else el.classList.remove('opacity-70', 'bg-gray-50');
     };
-    ['detail-subject', 'detail-method', 'detail-date-edit', 'detail-start-edit', 'detail-end-edit'].forEach(id => set(id, false));
+    ['detail-subject', 'detail-method', 'detail-goal', 'detail-date-edit', 'detail-start-edit', 'detail-end-edit'].forEach(id => set(id, false));
 
     document.getElementById('detail-net-edit-wrapper').classList.remove('hidden');
     document.getElementById('detail-net').classList.add('hidden');
@@ -170,6 +243,17 @@ const toggleEditSession = () => {
 
     document.getElementById('btn-edit-session').classList.add('hidden');
     document.getElementById('btn-save-session').classList.remove('hidden');
+
+    // Subject Change Listener
+    document.getElementById('detail-subject').onchange = (e) => {
+        const sub = e.target.value;
+        const goalSel = document.getElementById('detail-goal');
+        import('./modules/goals.js').then(({ getGoalsBySubject }) => {
+            const goals = getGoalsBySubject(sub);
+            goalSel.innerHTML = '<option value="">-- Sin vincular --</option>' +
+                goals.map(g => `<option value="${g.id}">${g.nombre}</option>`).join('');
+        });
+    };
 };
 
 const saveSessionChanges = async () => {
@@ -203,40 +287,124 @@ const saveSessionChanges = async () => {
 
         const newEff = newGross > 0 ? Math.round((finalNetMs / newGross) * 100) : 0;
 
+        // Detect if Pause Duration Changed
+        // Use a unique name to avoid collision with later usage
+        const currentSessionForCheck = window.globalSessionCache.find(s => s.id === currentDetailId);
+        const oldInterruptions = currentSessionForCheck ? (currentSessionForCheck.interruptions || []) : [];
+        const oldPauseMs = oldInterruptions.reduce((acc, i) => acc + (i.duration || 0), 0);
+
+        let finalInterruptions = [];
+
+        // Logic: If the TOTAL pause time from the edit form (minutes) is roughly equal to the original total pause time,
+        // we assume the user did NOT want to start editing the complex pause structure, so we KEEP the original structure.
+        // We allow < 60s difference because the input is only in minutes (resolution loss).
+        if (Math.abs(newPauseMs - oldPauseMs) < 60000) {
+            // Duration didn't change (significantly), PRESERVE HISTORY
+            // CRITICAL: If Start Time changed, technical shifts might be needed, but for now just preserving is safer than destroying.
+            finalInterruptions = oldInterruptions;
+        } else {
+            // Duration changed, we must synthesize (lossy) because we don't know WHICH pause changed.
+            // This is the fallback "Single Block" interruption.
+            finalInterruptions = newPauseMs > 0 ? [{
+                start: startTs + (finalNetMs / 2),
+                end: startTs + (finalNetMs / 2) + newPauseMs,
+                duration: newPauseMs,
+                reason: "Editado Manualmente"
+            }] : [];
+        }
+
         const updateData = {
             subject: newSub,
             method: newMet,
+            goalId: document.getElementById('detail-goal').value || null,
             startTime: startTs,
             endTime: endTs,
             grossDuration: newGross,
             netDuration: finalNetMs,
             efficiency: newEff,
-            interruptions: newPauseMs > 0 ? [{
-                start: startTs + (finalNetMs / 2),
-                end: startTs + (finalNetMs / 2) + newPauseMs,
-                duration: newPauseMs,
-                reason: "Editado Manualmente"
-            }] : []
+            interruptions: finalInterruptions
         };
 
+        // Handle Goal Progress Update
+        // Note: We use 'originalSession' here again or just reuse 'currentSessionForCheck'
+        const oldGoalId = currentSessionForCheck.goalId || null;
+        const newGoalId = updateData.goalId;
+        const oldDuration = currentSessionForCheck.netDuration || 0;
+        const newDuration = finalNetMs;
+
+        // Import goals module dynamically
+        const { moveSessionGoal, incrementGoalProgress } = await import('./modules/goals.js');
+
+        if (oldGoalId !== newGoalId) {
+            // Goal Swapped: Remove from Old, Add New (with NEW duration)
+            if (oldGoalId) await incrementGoalProgress(oldGoalId, -oldDuration);
+            if (newGoalId) await incrementGoalProgress(newGoalId, newDuration);
+        } else if (newGoalId && oldDuration !== newDuration) {
+            // Same Goal, Duration Changed
+            const diff = newDuration - oldDuration;
+            await incrementGoalProgress(newGoalId, diff);
+        }
+
+        // Check if Draft
+        const isDraft = currentDetailId.startsWith('draft_');
+
+        // Clean cache of draft? Handled later or overwritten.
+
         if (user) {
-            await updateDoc(doc(db, "study_sessions", currentDetailId), updateData);
+            if (isDraft) {
+                // CREATE NEW
+                const payload = {
+                    ...updateData,
+                    uid: user.uid,
+                    createdAt: Date.now() // Real creation time
+                };
+                // Remove goalId if null to keep clean? Firestore saves nulls fine.
+
+                await addDoc(collection(db, "study_sessions"), payload);
+                showAlert("¡Sesión Creada!");
+            } else {
+                // UPDATE OLD
+                await updateDoc(doc(db, "study_sessions", currentDetailId), updateData);
+                showAlert("¡Guardado en Nube!");
+            }
             disableEditSession();
-            showAlert("¡Guardado en Nube!");
             document.getElementById('modal-detail').classList.add('hidden');
         } else {
+            // GUEST
             const history = window.globalSessionCache || [];
-            const idx = history.findIndex(s => s.id == currentDetailId);
-            if (idx > -1) {
-                // Merge
-                history[idx] = { ...history[idx], ...updateData };
-                localStorage.setItem('guest_study_history', JSON.stringify(history));
-                loadHistory(); // Reload table
-                disableEditSession();
-                document.getElementById('modal-detail').classList.add('hidden');
-                showAlert("Guardado.");
+            if (isDraft) {
+                // Convert draft to real local ID
+                const newId = Date.now().toString();
+                const payload = {
+                    ...updateData,
+                    id: newId,
+                    uid: 'guest',
+                    createdAt: Date.now()
+                };
+                // Remove draft from cache first? 
+                // Currently draft is IN cache. We can just mutate it or splice/push.
+                const draftIdx = history.findIndex(s => s.id === currentDetailId);
+                if (draftIdx > -1) {
+                    history[draftIdx] = payload; // Replace draft with real
+                } else {
+                    history.push(payload);
+                }
+            } else {
+                const idx = history.findIndex(s => s.id == currentDetailId);
+                if (idx > -1) {
+                    history[idx] = { ...history[idx], ...updateData };
+                }
             }
+
+            localStorage.setItem('guest_study_history', JSON.stringify(history));
+            loadHistory(); // Reload table
+            disableEditSession();
+            document.getElementById('modal-detail').classList.add('hidden');
+            showAlert("Guardado.");
         }
+
+        // Remove draft from cache logic if user closed without saving is needed in 'Close' handler.
+        // But here we SAVED, so draft is now processed.
     } catch (err) {
         console.error("Save error:", err);
         showAlert("Ocurrió un error al guardar.");
@@ -246,10 +414,26 @@ const saveSessionChanges = async () => {
 const promptDeleteSession = () => {
     showConfirm("Eliminar", "¿Borrar sesión?", async () => {
         const user = getCurrentUser();
+
+        // Handle Goal Progress (Decrement)
+        const session = window.globalSessionCache.find(s => s.id === currentDetailId);
+        if (session && session.goalId) {
+            try {
+                const { incrementGoalProgress } = await import('./modules/goals.js');
+                await incrementGoalProgress(session.goalId, -(session.netDuration || 0));
+            } catch (e) {
+                console.error("Error updating goal on delete:", e);
+            }
+        }
+
         if (user && currentDetailId) {
-            await deleteDoc(doc(db, "study_sessions", currentDetailId));
+            // Delete from Cloud
+            if (!currentDetailId.startsWith('draft_')) {
+                await deleteDoc(doc(db, "study_sessions", currentDetailId));
+            }
             document.getElementById('modal-detail').classList.add('hidden');
             showAlert("Eliminado.");
+            // Cache update will happen via onSnapshot or reload
         } else {
             // Local
             let h = JSON.parse(localStorage.getItem('guest_study_history') || '[]');
@@ -265,19 +449,31 @@ const promptDeleteSession = () => {
 
 // --- MANUAL ENTRY ---
 const openManualEntry = () => {
-    const d = new Date();
-    const pad = (n) => String(n).padStart(2, '0');
-    // Format YYYY-MM-DD
-    document.getElementById('man-date').value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-    // Format HH:MM
-    document.getElementById('man-start').value = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    // Populate dropdowns fresh
+    document.getElementById('man-subject').innerHTML = ''; // forced refresh trigger via data.js?
+    // Data module has renderAllDropdowns, but we need to trigger it or just rely on it being ready.
+    // It's usually ready.
 
-    const later = new Date(d.getTime() + 3600000);
-    document.getElementById('man-end').value = later.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-
-    // Reset Duration
+    // Clear fields
+    document.getElementById('man-date').valueAsDate = new Date();
+    document.getElementById('man-start').value = "";
+    document.getElementById('man-end').value = "";
     document.getElementById('man-duration').value = "";
-    document.getElementById('man-pause').value = "0";
+    document.getElementById('man-subject').value = "";
+    document.getElementById('man-goal').innerHTML = '<option value="">-- Sin vincular --</option>'; // reset
+
+    // Bind Subject Change
+    document.getElementById('man-subject').onchange = (e) => {
+        const sub = e.target.value;
+        const goalSel = document.getElementById('man-goal');
+        import('./modules/goals.js').then(({ getGoalsBySubject }) => {
+            const goals = getGoalsBySubject(sub);
+            goalSel.innerHTML = '<option value="">-- Sin vincular --</option>' +
+                goals.map(g => `<option value="${g.id}">${g.nombre}</option>`).join('');
+        });
+    };
+    // Trigger once to load initial subjects goals if any
+    document.getElementById('man-subject').dispatchEvent(new Event('change'));
 
     document.getElementById('modal-manual').classList.remove('hidden');
     setupManualSmartLogic();
@@ -285,17 +481,18 @@ const openManualEntry = () => {
 
 const saveManualEntry = async () => {
     try {
+        const dDate = document.getElementById('man-date').value;
+        const dStart = document.getElementById('man-start').value;
+        const dEnd = document.getElementById('man-end').value;
+        const durRaw = document.getElementById('man-duration').value;
         const sub = document.getElementById('man-subject').value;
         const met = document.getElementById('man-method').value;
-        const subMan = document.getElementById('man-subject').value; // already captured
+        const task = document.getElementById('man-goal').value || null; // Goal ID
 
-        const dateVal = document.getElementById('man-date').value;
-        const startVal = document.getElementById('man-start').value;
-        const endVal = document.getElementById('man-end').value;
-        const durVal = parseInt(document.getElementById('man-duration').value) || 0;
+        const durVal = parseInt(durRaw) || 0;
         const pauseMins = parseInt(document.getElementById('man-pause').value) || 0;
 
-        if (!dateVal) return showAlert("Por favor selecciona una fecha");
+        if (!dDate) return showAlert("Por favor selecciona una fecha");
 
         let startTs, endTs, gross, net;
         const pauseMs = pauseMins * 60000;
@@ -384,7 +581,8 @@ function setupSmartEditing() {
         start: getEl('detail-start-edit'),
         end: getEl('detail-end-edit'),
         net: getEl('detail-net-edit'),
-        pause: getEl('detail-pause-edit')
+        pause: getEl('detail-pause-edit'),
+        goal: getEl('detail-goal')
     };
 
     const handleTimeChange = () => {
