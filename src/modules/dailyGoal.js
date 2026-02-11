@@ -67,12 +67,19 @@ export const calculateDailyGoalStats = (goal, sessions) => {
     // This value is constant for the day (unless TotalTarget changes).
 
     const examDate = new Date(goal.examDate);
-    // Diff in days. Ceiling to include today.
-    // If exam is today, days=1. If exam passed, days=0?
-    const diffTime = examDate - now;
+    // Set exam date to end of day to be inclusive? Or start of day?
+    // Let's assume start of day for comparison.
+    examDate.setHours(0, 0, 0, 0);
+    const todayZero = new Date();
+    todayZero.setHours(0, 0, 0, 0);
+
+    const diffTime = examDate - todayZero;
+    // If diffTime < 0, it is in the past.
+    const isExpired = diffTime < 0;
+
     let daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    if (daysLeft < 1) daysLeft = 1; // Exam is today or passed, treat as "finish now"
+    if (daysLeft < 1) daysLeft = 1;
 
     // We add doneToday back to remaining to get the "Morning State" remaining.
     const remainingAtStartOfDay = remainingTotal + doneTodayHours;
@@ -89,7 +96,8 @@ export const calculateDailyGoalStats = (goal, sessions) => {
         doneToday: doneTodayHours,
         targetToday: targetToday,
         isCompleted: doneTodayHours >= targetToday && targetToday > 0,
-        isTotalCompleted: totalDone >= totalTarget
+        isTotalCompleted: totalDone >= totalTarget,
+        isExpired: isExpired
     };
 };
 
@@ -107,15 +115,11 @@ export const renderDailyPlan = () => {
     const activeStats = goals
         .filter(g => g.status !== 'archived') // Assuming 'active' logic
         .map(g => calculateDailyGoalStats(g, sessions))
-        // Filter out goals that are totally done? User might want to see them as "Done"
-        // But maybe hide if totally done a long time ago. 
-        // Let's show all active goals.
-        .filter(s => !s.isTotalCompleted);
+        // Filter out goals that are totally done or EXPIRED
+        .filter(s => !s.isTotalCompleted && !s.isExpired);
 
     if (activeStats.length === 0) {
         document.getElementById('daily-plan-panel').classList.add('hidden');
-        // If hidden, ensure the flex container behaves nicely (setup panel takes full width logic is in CSS?)
-        // actually we can just hide the panel.
         return;
     }
 
@@ -164,7 +168,7 @@ export const renderDailyPlan = () => {
                     <span class="text-xs font-bold text-secondary mt-1">${Math.round(pct)}%</span>
                 </div>
                 
-                <div class="h-2 w-full bg-theme/20 rounded-full overflow-hidden mb-1 mt-1">
+                <div class="h-2 w-full bg-theme/20 rounded-full overflow-hidden mb-1 mt-1 border border-theme">
                     <div class="${barColor} h-full transition-all duration-500" style="width: ${pct}%"></div>
                 </div>
                 
