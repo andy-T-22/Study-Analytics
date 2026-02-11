@@ -3,6 +3,8 @@ import { collection, addDoc } from "firebase/firestore";
 import { getCurrentUser } from "./auth.js";
 import { formatTime, showAlert, getStyle } from "./utils.js";
 import { loadHistory } from "./data.js";
+import { getFeedback } from "./feedback.js";
+import { renderDailyPlan } from "./dailyGoal.js"; // New Import
 
 let activeSession = null;
 let timerInterval = null;
@@ -12,12 +14,25 @@ let appSettings = JSON.parse(localStorage.getItem('app_settings') || '{"showSeco
 const dom = {
     setup: () => document.getElementById('tracker-setup'),
     active: () => document.getElementById('tracker-active'),
+    dailyPlan: () => document.getElementById('daily-plan-panel'), // New
     display: () => document.getElementById('timer-display'),
     subjDisp: () => document.getElementById('active-subject'),
     methDisp: () => document.getElementById('active-method'),
     overlay: () => document.getElementById('overlay-paused'),
     reasonDisp: () => document.getElementById('pause-reason-display'),
-    btnToggleSecs: () => document.getElementById('btn-toggle-seconds')
+    btnToggleSecs: () => document.getElementById('btn-toggle-seconds'),
+    // Summary Modal
+    summaryModal: () => document.getElementById('modal-summary'),
+    sumPhrase: () => document.getElementById('sum-phrase'),
+    sumSugerencia: () => document.getElementById('sum-sugerencia'),
+    sumConcVal: () => document.getElementById('sum-conc-val'),
+    sumStudyTime: () => document.getElementById('sum-study-time'),
+    sumTotalTime: () => document.getElementById('sum-total-time'),
+    sumPauseTime: () => document.getElementById('sum-pause-time'),
+    sumPauseCount: () => document.getElementById('sum-pause-count'),
+    barStudy: () => document.getElementById('bar-study'),
+    barPause: () => document.getElementById('bar-pause'),
+    btnCloseSum: () => document.getElementById('btn-close-summary')
 };
 
 export const initTimer = () => {
@@ -57,6 +72,11 @@ export const initTimer = () => {
     // Overlay Resume
     document.getElementById('btn-resume-overlay').onclick = resumeSession;
 
+    // Summary Close
+    if (dom.btnCloseSum()) {
+        dom.btnCloseSum().onclick = closeSummaryAndReset;
+    }
+
     // Settings (Seconds Toggle)
     const btnSec = document.getElementById('btn-toggle-seconds');
     if (btnSec) btnSec.onclick = toggleSeconds;
@@ -66,6 +86,54 @@ export const initTimer = () => {
     document.addEventListener('goals-updated', updateGoalDropdown); // Listen for data changes
 
     renderSettingsUI();
+    initDebug();
+};
+
+const initDebug = () => {
+    const btn = document.getElementById('btn-debug-sim');
+    if (btn) {
+        btn.onclick = () => {
+            const totalMin = parseInt(document.getElementById('dbg-total').value) || 60;
+            const count = parseInt(document.getElementById('dbg-count').value) || 0;
+            const intMin = parseInt(document.getElementById('dbg-int-min').value) || 0;
+            simulateSession(totalMin, count, intMin);
+        };
+    }
+};
+
+const simulateSession = (totalMin, intCount, intMin) => {
+    // Force close settings header
+    document.getElementById('modal-settings').classList.add('hidden');
+
+    const now = Date.now();
+    const totalMs = totalMin * 60000;
+    const intMs = intMin * 60000;
+
+    // Create fake interruptions
+    const interruptions = [];
+    if (intCount > 0) {
+        const avgInt = intMs / intCount;
+        for (let i = 0; i < intCount; i++) {
+            interruptions.push({
+                duration: avgInt,
+                reason: 'Simulated Debug'
+            });
+        }
+    }
+
+    // Set global activeSession (bypass checks)
+    activeSession = {
+        uid: getCurrentUser() ? getCurrentUser().uid : 'guest',
+        subject: document.getElementById('sel-subject').value || 'Debug Matter',
+        method: 'Debug Method',
+        goalId: null,
+        startTime: now - totalMs,
+        interruptions: interruptions,
+        status: 'running'
+    };
+
+    // Trigger stop logic immediately
+    stopSession();
 };
 
 const updateGoalDropdown = () => {
@@ -116,6 +184,7 @@ const startSession = () => {
 
 const resumeTimerUI = (session) => {
     dom.setup().classList.add('hidden');
+    if (dom.dailyPlan()) dom.dailyPlan().classList.add('hidden'); // Hide Plan
     dom.active().classList.remove('hidden');
     dom.subjDisp().textContent = session.subject;
     dom.methDisp().textContent = session.method;
@@ -215,28 +284,79 @@ const stopSession = async () => {
     };
     delete sessionData.status;
 
+    // GENERATE FEEDBACK & SHOW SUMMARY
+    const feedback = getFeedback(sessionData);
+    showSummaryUI(feedback, sessionData);
+
+    // Save (Background)
+    const user = getCurrentUser();
+    saveToStorage(sessionData, user); // Helper function extracted
+};
+
+const showSummaryUI = (fb, sessionData) => {
+    // 1. Phrase & Suggestion
+    dom.sumPhrase().textContent = `"${fb.frase}"`;
+    if (fb.sugerencia) {
+        dom.sumSugerencia().textContent = `💡 ${fb.sugerencia}`;
+        dom.sumSugerencia().classList.remove('hidden');
+    } else {
+        dom.sumSugerencia().classList.add('hidden');
+    }
+
+    // 2. Concentration
+    dom.sumConcVal().textContent = `${fb.concentracion}%`;
+    // Color logic
+    dom.sumConcVal().className = "text-6xl font-black tracking-tighter transition-colors"; // reset
+    if (fb.concentracion_tipo === 'alta') dom.sumConcVal().classList.add('text-acc-green');
+    else if (fb.concentracion_tipo === 'media') dom.sumConcVal().classList.add('text-acc-blue');
+    else dom.sumConcVal().classList.add('text-acc-red');
+
+    // 3. Times
+    dom.sumStudyTime().textContent = `${fb.tiempo_estudio_min} min`;
+    dom.sumTotalTime().textContent = `${fb.duracion_total_min} min`;
+    dom.sumPauseTime().textContent = `${fb.tiempo_interrupcion_min} min`;
+    if (dom.sumPauseCount()) dom.sumPauseCount().textContent = `${fb.cantidad_interrupciones}`;
+
+    // 4. Bar
+    const totalMin = fb.duracion_total_min || 1; // avoid div 0
+    const studyPct = Math.min(100, (fb.tiempo_estudio_min / totalMin) * 100);
+    const pausePct = 100 - studyPct;
+
+    dom.barStudy().style.width = `${studyPct}%`;
+    dom.barPause().style.width = `${pausePct}%`;
+
+    // Show Modal
+    dom.summaryModal().classList.remove('hidden');
+};
+
+const closeSummaryAndReset = () => {
+    dom.summaryModal().classList.add('hidden');
+
     // Reset UI
     localStorage.removeItem('study_session');
     activeSession = null;
     dom.active().classList.add('hidden');
     dom.setup().classList.remove('hidden');
+
+    // Restore Daily Plan (if goals exist)
+    renderDailyPlan();
+
     dom.display().textContent = "00:00";
     document.title = "Focus Analytics";
 
-    // Save
-    const user = getCurrentUser();
+    // Reload history to show new entry
+    loadHistory();
+};
+
+const saveToStorage = async (sessionData, user) => {
     if (user) {
         try {
             await addDoc(collection(db, 'study_sessions'), sessionData);
-
-            // UPDATE GOAL IF LINKED
             if (sessionData.goalId) {
                 import('./goals.js').then(({ incrementGoalProgress }) => {
                     incrementGoalProgress(sessionData.goalId, sessionData.netDuration);
                 });
             }
-
-            showAlert(`Guardado en Nube. Eficiencia: ${eff}%`);
         } catch (e) {
             console.error(e);
             showAlert("Error al guardar en nube.");
@@ -251,9 +371,6 @@ const stopSession = async () => {
                 incrementGoalProgress(sessionData.goalId, sessionData.netDuration);
             });
         }
-
-        showAlert(`Guardado Local. Eficiencia: ${eff}%`);
-        loadHistory();
     }
 };
 

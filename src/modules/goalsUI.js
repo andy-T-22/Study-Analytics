@@ -1,4 +1,4 @@
-import { createGoal, deleteGoal, calculateIntensity, getCurrentGoals } from "./goals.js";
+import { createGoal, deleteGoal, getPaceString, getCurrentGoals } from "./goals.js";
 import { getSubjects } from "./data.js"; // To populate subject dropdown in modal
 import { showAlert, showConfirm } from "./utils.js";
 import { getCurrentUser } from "./auth.js";
@@ -23,7 +23,9 @@ export const renderGoals = (goals) => {
 
     list.innerHTML = goals.map(g => {
         const percent = Math.min(100, Math.round(((g.accumulatedHours || 0) / g.targetHours) * 100));
-        const intensity = calculateIntensity(g);
+
+        // Use Persisted/Stable Pace
+        const intensity = getPaceString(g);
 
         // Color based on urgency/progress
         let barColor = "bg-acc-blue";

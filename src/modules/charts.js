@@ -427,16 +427,36 @@ export const applyHistoryFilters = () => {
     renderHistoryList(filtered);
 };
 
+// --- HISTORY PAGINATION ---
+let historyLimit = 10;
+const HISTORY_PAGE_SIZE = 10;
+
+export const resetHistoryLimit = () => {
+    historyLimit = HISTORY_PAGE_SIZE;
+};
+
+export const loadMoreHistory = () => {
+    historyLimit += HISTORY_PAGE_SIZE;
+    applyHistoryFilters(); // Re-render with new limit
+};
+
 export const renderHistoryList = (listData) => {
     const list = document.getElementById('history-list');
     list.innerHTML = '';
+
+    // Remove existing 'Load More' button if any (it's usually outside tbody, but let's be safe)
+    const existingBtn = document.getElementById('btn-load-more-history');
+    if (existingBtn) existingBtn.remove();
 
     if (listData.length === 0) {
         list.innerHTML = '<tr><td colspan="5" class="p-8 text-center italic text-secondary">No se encontraron sesiones.</td></tr>';
         return;
     }
 
-    listData.forEach(d => {
+    // Slice Data
+    const visibleData = listData.slice(0, historyLimit);
+
+    visibleData.forEach(d => {
         const dateStr = new Date(d.startTime).toLocaleDateString();
         const mins = Math.floor(d.netDuration / 60000);
 
@@ -455,4 +475,26 @@ export const renderHistoryList = (listData) => {
         `;
         list.appendChild(tr);
     });
+
+    // Render 'Show More' if needed
+    if (listData.length > historyLimit) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td colspan="5" class="p-4 text-center">
+                <button id="btn-show-more-hist" 
+                    class="text-xs font-bold text-secondary hover:text-primary transition-colors uppercase tracking-widest">
+                    Mostrar Más <i class="fas fa-chevron-down ml-1"></i>
+                </button>
+            </td>
+        `;
+        list.appendChild(row);
+
+        setTimeout(() => {
+            const btn = document.getElementById('btn-show-more-hist');
+            if (btn) btn.onclick = (e) => {
+                e.stopPropagation();
+                loadMoreHistory();
+            };
+        }, 0);
+    }
 };

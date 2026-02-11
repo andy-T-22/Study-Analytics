@@ -121,6 +121,7 @@ const processDataChange = (docs) => {
     // Refresh UI
     applyHistoryFilters();
     updateCharts();
+    import('../modules/dailyGoal.js').then(m => m.renderDailyPlan()); // Update Daily Plan
 };
 
 // --- DROPDOWNS ---

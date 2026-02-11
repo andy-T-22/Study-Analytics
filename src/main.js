@@ -2,17 +2,20 @@ import './style.css';
 import { initAuth, getCurrentUser } from './modules/auth.js';
 import { initThemes } from './modules/themes.js';
 import { initTimer } from './modules/timer.js';
-import { updateCharts, applyHistoryFilters, renderTimeline } from './modules/charts.js'; // Ensure correct imports
+import { updateCharts, applyHistoryFilters, renderTimeline, resetHistoryLimit } from './modules/charts.js'; // Ensure correct imports
 import { formatTime, showAlert, showConfirm } from './modules/utils.js';
 import { db } from './services/firebaseConfig.js';
 import { doc, updateDoc, deleteDoc, addDoc, collection } from 'firebase/firestore'; loadHistory();
 import { loadHistory } from './modules/data.js';
+
+import { initDailyGoalPanel, renderDailyPlan } from './modules/dailyGoal.js';
 
 // --- INIT ---
 document.addEventListener('DOMContentLoaded', () => {
     initAuth();
     initThemes();
     initTimer();
+    initDailyGoalPanel(); // New
     bindGlobalEvents();
 });
 
@@ -50,10 +53,10 @@ const bindGlobalEvents = () => {
     document.getElementById('dash-end').onchange = updateCharts;
     document.getElementById('dash-filter-subject').onchange = updateCharts;
 
-    document.getElementById('hist-filter-period').onchange = () => toggleCustomDate('hist');
-    document.getElementById('hist-filter-start').onchange = () => applyHistoryFilters();
-    document.getElementById('hist-filter-end').onchange = () => applyHistoryFilters();
-    document.getElementById('hist-filter-subject').onchange = () => applyHistoryFilters();
+    document.getElementById('hist-filter-period').onchange = () => { toggleCustomDate('hist'); resetHistoryLimit(); applyHistoryFilters(); };
+    document.getElementById('hist-filter-start').onchange = () => { resetHistoryLimit(); applyHistoryFilters(); };
+    document.getElementById('hist-filter-end').onchange = () => { resetHistoryLimit(); applyHistoryFilters(); };
+    document.getElementById('hist-filter-subject').onchange = () => { resetHistoryLimit(); applyHistoryFilters(); };
 
     // Manual Entry
     // Manual Entry

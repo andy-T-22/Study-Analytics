@@ -1,16 +1,15 @@
 import { db } from "../services/firebaseConfig.js";
-import { collection, addDoc, query, where, onSnapshot, doc, updateDoc, increment, deleteDoc } from "firebase/firestore";
+import { collection, addDoc, query, where, onSnapshot, doc, updateDoc, increment, deleteDoc, writeBatch } from "firebase/firestore";
 
 let currentGoals = [];
 let unsubscribe = null;
 
 export const initGoals = (user, callback) => {
     if (!user) {
-        // Guest mode support? Maybe later. For now, empty or local.
-        // Let's support local storage for guests for consistent UX.
+        // Guest mode support - LocalStorage
         const local = JSON.parse(localStorage.getItem('guest_goals') || '[]');
         currentGoals = local;
-        if (callback) callback(local);
+        maintenanceGuest(local, callback);
         return;
     }
 
@@ -22,42 +21,139 @@ export const initGoals = (user, callback) => {
             data.id = d.id;
             // Convert timestamp to Date
             if (data.examDate && data.examDate.toDate) data.examDate = data.examDate.toDate();
+            // Handle legacy data (missing fields)
+            if (data.dailyPace === undefined) data.dailyPace = null;
             goals.push(data);
         });
         currentGoals = goals;
+
+        // Run Maintenance Check (Debounced or immediate? Immediate is fine for small list)
+        checkAndMaintainPace(goals, user);
+
         if (callback) callback(goals);
     });
 };
 
+// --- MAINTENANCE LOGIC ---
+
+const getTodayStr = () => new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
+
+const checkAndMaintainPace = async (goals, user) => {
+    const today = getTodayStr();
+    const batch = writeBatch(db);
+    let updatesCount = 0;
+
+    goals.forEach(g => {
+        // Condition: No pace stored OR Date is old
+        if (g.status === 'active' && (!g.lastPaceUpdate || g.lastPaceUpdate !== today)) {
+            const stats = calculatePace(g);
+
+            // Only update if cloud goal
+            const ref = doc(db, "objectives", g.id);
+            batch.update(ref, {
+                dailyPace: stats.pace,
+                lastPaceUpdate: today,
+                paceStatus: stats.status
+            });
+            updatesCount++;
+        }
+    });
+
+    if (updatesCount > 0 && user) {
+        // console.log(`Updating pace for ${updatesCount} goals.`);
+        try {
+            await batch.commit();
+        } catch (e) { console.error("Pace update error", e); }
+    }
+};
+
+const maintenanceGuest = (goals, callback) => {
+    const today = getTodayStr();
+    let changed = false;
+
+    goals.forEach(g => {
+        if (g.status === 'active' && (!g.lastPaceUpdate || g.lastPaceUpdate !== today)) {
+            const stats = calculatePace(g);
+            g.dailyPace = stats.pace;
+            g.lastPaceUpdate = today;
+            g.paceStatus = stats.status;
+            changed = true;
+        }
+    });
+
+    if (changed) {
+        saveLocal();
+        if (callback) callback(goals); // Re-emit updated
+    } else {
+        if (callback) callback(goals);
+    }
+};
+
+// --- CORE CALCULATION ---
+
+export const calculatePace = (goal) => {
+    const total = goal.targetHours;
+    const done = goal.accumulatedHours || 0;
+    const remaining = total - done;
+
+    const now = new Date();
+    const exam = new Date(goal.examDate);
+
+    const diffTime = exam - now;
+    let days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (days < 1 && diffTime > 0) days = 1; // At least 1 day if in future
+
+    let pace = 0;
+    let status = 'active';
+
+    if (remaining <= 0) {
+        pace = 0;
+        status = 'completada';
+    } else if (days <= 0 && remaining > 0) {
+        pace = remaining; // Show remaining as pace?
+        status = 'vencida';
+    } else {
+        pace = remaining / days;
+        status = 'active';
+    }
+
+    // Round to 1 decimal
+    pace = Math.round(pace * 10) / 10;
+
+    return { pace, status };
+};
+
 export const createGoal = async (user, goalData) => {
-    // goalData: { title, subject, targetHours, examDate }
+    const today = getTodayStr();
+
+    // Initial Calc
+    const mock = { ...goalData, accumulatedHours: 0 };
+    if (typeof mock.examDate === 'string') mock.examDate = new Date(mock.examDate);
+    const stats = calculatePace(mock);
+
     const payload = {
         ...goalData,
         uid: user ? user.uid : 'guest',
         accumulatedHours: 0,
         createdAt: new Date(),
-        status: 'active'
+        status: 'active',
+        // Persistence
+        dailyPace: stats.pace,
+        lastPaceUpdate: today,
+        paceStatus: stats.status
     };
 
     if (user) {
         await addDoc(collection(db, "objectives"), payload);
     } else {
-        payload.id = Date.now().toString(); // Local ID
-        // Convert date string to obj if needed, but input is typically date obj or string
-        if (typeof payload.examDate === 'string') payload.examDate = new Date(payload.examDate);
-
+        payload.id = Date.now().toString();
         currentGoals.push(payload);
         saveLocal();
-        // Trigger UI update manually via callback if needed, but usually we rely on currentGoals ref or reloading
-        // We might need to expose a way to trigger listener for local.
-        // Simpler: reloadGoalsUI() is usually called by the consumer.
     }
 };
 
 export const incrementGoalProgress = async (goalId, durationMs) => {
     const hours = durationMs / 3600000;
-
-    // Find if cloud or local
     const isLocal = !unsubscribe;
 
     if (!isLocal) {
@@ -65,6 +161,7 @@ export const incrementGoalProgress = async (goalId, durationMs) => {
         await updateDoc(ref, {
             accumulatedHours: increment(hours)
         });
+        // Note: We DO NOT update dailyPace here. It remains stable.
     } else {
         const g = currentGoals.find(g => g.id === goalId);
         if (g) {
@@ -75,13 +172,8 @@ export const incrementGoalProgress = async (goalId, durationMs) => {
 };
 
 export const moveSessionGoal = async (oldGoalId, newGoalId, durationMs) => {
-    // If goals are same, do nothing
     if (oldGoalId === newGoalId) return;
-
-    // Decrement Old
     if (oldGoalId) await incrementGoalProgress(oldGoalId, -durationMs);
-
-    // Increment New
     if (newGoalId) await incrementGoalProgress(newGoalId, durationMs);
 };
 
@@ -99,28 +191,30 @@ export const getGoalsBySubject = (subject) => {
     return currentGoals.filter(g => g.subject === subject && g.status === 'active');
 };
 
-export const calculateIntensity = (goal) => {
+// Helper to format string UI can use
+export const getPaceString = (goal) => {
+    // Fallback if field missing (legacy)
+    let p = goal.dailyPace;
+    if (p === undefined || p === null) {
+        const stats = calculatePace(goal);
+        p = stats.pace;
+    }
+
+    // Dynamic Overrides for Status (Realtime feedback)
+    const rem = goal.targetHours - (goal.accumulatedHours || 0);
+    if (rem <= 0) return "¡Meta alcanzada!";
+
+    // Check Date directly
     const now = new Date();
     const exam = new Date(goal.examDate);
+    if (exam < now && rem > 0) return "Examen pasado";
 
-    if (exam <= now) return "El examen ya pasó";
+    if (goal.paceStatus === 'vencida') return "¡Imposible!";
 
-    // Remaining Hours
-    const remainingHours = goal.targetHours - (goal.accumulatedHours || 0);
-    if (remainingHours <= 0) return "¡Meta alcanzada!";
+    if (p > 24) return "¡Imposible!";
+    if (p < 0.1) return "Vas sobrado";
 
-    // Remaining Days
-    const diffTime = Math.abs(exam - now);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return "¡Es hoy!";
-
-    const hoursPerDay = remainingHours / diffDays;
-
-    if (hoursPerDay > 24) return "¡Imposible!";
-    if (hoursPerDay < 0.1) return "Vas sobrado";
-
-    return `${hoursPerDay.toFixed(1)}h / día`;
+    return `${p.toFixed(1)}h / día`;
 };
 
 const saveLocal = () => {
