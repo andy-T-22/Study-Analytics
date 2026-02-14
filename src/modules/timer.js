@@ -5,10 +5,11 @@ import { formatTime, showAlert, getStyle } from "./utils.js";
 import { loadHistory, getSubjects, getMethods } from "./data.js";
 import { getFeedback } from "./feedback.js";
 import { renderDailyPlan } from "./dailyGoal.js"; // New Import
+import { faviconAnimator } from "./favicon.js";
 
 let activeSession = null;
 let timerInterval = null;
-let appSettings = JSON.parse(localStorage.getItem('app_settings') || '{"showSeconds": true}');
+let appSettings = JSON.parse(localStorage.getItem('app_settings') || '{"showSeconds": true, "showFavicon": true}');
 
 // DOM Elements (Cached)
 const dom = {
@@ -21,6 +22,7 @@ const dom = {
     overlay: () => document.getElementById('overlay-paused'),
     reasonDisp: () => document.getElementById('pause-reason-display'),
     btnToggleSecs: () => document.getElementById('btn-toggle-seconds'),
+    btnToggleFav: () => document.getElementById('btn-toggle-favicon'),
     // Post Session Modal
     postModal: () => document.getElementById('modal-post-session'),
     postSub: () => document.getElementById('post-subject'),
@@ -87,6 +89,12 @@ export const initTimer = () => {
     // Settings (Seconds Toggle)
     const btnSec = document.getElementById('btn-toggle-seconds');
     if (btnSec) btnSec.onclick = toggleSeconds;
+
+    const btnFav = document.getElementById('btn-toggle-favicon');
+    if (btnFav) btnFav.onclick = toggleFavicon;
+
+    // Initialize Favicon State
+    faviconAnimator.setEnabled(appSettings.showFavicon);
 
     // Goal Filter Logic
     if (dom.postSub()) dom.postSub().onchange = updatePostGoalDropdown;
@@ -192,6 +200,7 @@ const resumeTimerUI = (session) => {
     dom.methDisp().textContent = session.method;
 
     startLoop();
+    faviconAnimator.start();
 };
 
 const startLoop = () => {
@@ -232,6 +241,7 @@ const confirmPause = (reason) => {
 const pauseTimerUI = (session) => {
     dom.setup().classList.add('hidden');
     dom.active().classList.remove('hidden');
+    faviconAnimator.pause();
 
     // Show Overlay
     dom.reasonDisp().textContent = session.currentPauseReason;
@@ -265,11 +275,13 @@ const resumeSession = () => {
         delete activeSession.currentPauseReason;
         saveLocal();
         startLoop();
+        faviconAnimator.start();
     }
 };
 
 const stopSession = async () => {
     clearInterval(timerInterval);
+    faviconAnimator.stop();
     populatePostSessionModal();
     dom.postModal().classList.remove('hidden');
 };
@@ -393,6 +405,7 @@ const closeSummaryAndReset = () => {
 
     // Reload history to show new entry
     loadHistory();
+    faviconAnimator.stop();
 };
 
 const saveToStorage = async (sessionData, user) => {
@@ -433,6 +446,13 @@ const toggleSeconds = () => {
     if (activeSession) tick(); // update display
 };
 
+const toggleFavicon = () => {
+    appSettings.showFavicon = !appSettings.showFavicon;
+    localStorage.setItem('app_settings', JSON.stringify(appSettings));
+    faviconAnimator.setEnabled(appSettings.showFavicon);
+    renderSettingsUI();
+};
+
 const renderSettingsUI = () => {
     const btn = dom.btnToggleSecs();
     if (!btn) return;
@@ -443,5 +463,17 @@ const renderSettingsUI = () => {
     } else {
         btn.className = "w-12 h-6 bg-[#d1cbc1] rounded-full relative transition-colors duration-300";
         knob.className = "w-4 h-4 bg-white rounded-full absolute top-1 left-1 transition-transform duration-300";
+    }
+
+    const btnFav = dom.btnToggleFav();
+    if (btnFav) {
+        const knobFav = btnFav.firstElementChild;
+        if (appSettings.showFavicon) {
+            btnFav.className = "w-12 h-6 bg-[#a5f5c3] rounded-full relative transition-colors duration-300";
+            knobFav.className = "w-4 h-4 bg-white rounded-full absolute top-1 right-1 transition-transform duration-300";
+        } else {
+            btnFav.className = "w-12 h-6 bg-[#d1cbc1] rounded-full relative transition-colors duration-300";
+            knobFav.className = "w-4 h-4 bg-white rounded-full absolute top-1 left-1 transition-transform duration-300";
+        }
     }
 };
