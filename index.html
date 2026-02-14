@@ -114,49 +114,8 @@
                         <!-- Setup Panel (Only visible if not running) -->
                         <div id="tracker-setup" class="glass p-8 rounded-3xl w-full max-w-lg mx-auto z-10 relative">
                             <h2 class="text-xl font-bold mb-6 text-primary text-center">
-                                Configurar Sesión
+                                Cronómetro
                             </h2>
-
-                            <div class="space-y-6 mb-8">
-                                <div>
-                                    <div class="flex justify-between items-center mb-2">
-                                        <label
-                                            class="text-xs text-secondary uppercase font-bold tracking-wider">Materia</label>
-                                        <button class="text-xs text-acc-blue-dark hover:underline btn-manage-subjects">
-                                            Gestionar
-                                        </button>
-                                    </div>
-                                    <select id="sel-subject"
-                                        class="w-full rounded-xl p-3 text-sm shadow-sm outline-none border border-theme focus:ring-2 focus:ring-blue-300">
-                                        <!-- Populated dynamically -->
-                                    </select>
-                                </div>
-
-                                <!-- GOAL SELECTOR (Hidden by default) -->
-                                <div id="setup-goal-wrapper" class="hidden transition-all">
-                                    <label
-                                        class="text-xs text-secondary uppercase font-bold tracking-wider mb-2 block">Vincular
-                                        Objetivo</label>
-                                    <select id="sel-goal"
-                                        class="w-full rounded-xl p-3 text-sm shadow-sm outline-none border border-theme focus:ring-2 focus:ring-blue-300 bg-acc-blue/10">
-                                        <option value="">-- Sin vincular --</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <div class="flex justify-between items-center mb-2">
-                                        <label
-                                            class="text-xs text-secondary uppercase font-bold tracking-wider">Método</label>
-                                        <button class="text-xs text-acc-blue-dark hover:underline btn-manage-methods">
-                                            Gestionar
-                                        </button>
-                                    </div>
-                                    <select id="sel-method"
-                                        class="w-full rounded-xl p-3 text-sm shadow-sm outline-none border border-theme focus:ring-2 focus:ring-blue-300">
-                                        <!-- Populated dynamically -->
-                                    </select>
-                                </div>
-                            </div>
 
                             <button id="btn-start-session"
                                 class="w-full bg-acc-blue hover:brightness-95 text-primary font-bold py-4 rounded-2xl shadow-lg transition-all transform hover:scale-[1.02] border border-blue-200">
@@ -798,6 +757,60 @@
         </div>
     </div>
 
+
+    <!-- MODAL: POST SESSION CONFIG -->
+    <div id="modal-post-session"
+        class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center hidden backdrop-blur-md">
+        <div class="bg-card w-full max-w-md mx-4 rounded-3xl shadow-2xl border border-theme p-8 animate-slide-up">
+            <h3 class="text-2xl font-black text-primary mb-2 text-center">Sesión Finalizada</h3>
+            <p class="text-secondary text-center mb-6 text-sm">Completa los datos de tu sesión.</p>
+
+            <div class="space-y-5">
+                <!-- Subject -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-[10px] text-secondary uppercase font-bold tracking-wider">Materia</label>
+                        <button class="text-[10px] text-acc-blue-dark hover:underline btn-manage-subjects">
+                            Gestionar
+                        </button>
+                    </div>
+                    <select id="post-subject"
+                        class="w-full rounded-xl p-3 text-sm shadow-sm outline-none border border-theme focus:ring-2 focus:ring-blue-300">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+
+                <!-- Goal -->
+                <div id="post-goal-wrapper" class="hidden">
+                    <label class="text-[10px] text-secondary uppercase font-bold tracking-wider mb-1 block">Vincular
+                        Objetivo</label>
+                    <select id="post-goal"
+                        class="w-full rounded-xl p-3 text-sm shadow-sm outline-none border border-theme focus:ring-2 focus:ring-blue-300 bg-acc-blue/5">
+                        <option value="">-- Sin vincular --</option>
+                    </select>
+                </div>
+
+                <!-- Method -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-[10px] text-secondary uppercase font-bold tracking-wider">Método</label>
+                        <button class="text-[10px] text-acc-blue-dark hover:underline btn-manage-methods">
+                            Gestionar
+                        </button>
+                    </div>
+                    <select id="post-method"
+                        class="w-full rounded-xl p-3 text-sm shadow-sm outline-none border border-theme focus:ring-2 focus:ring-blue-300">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+            </div>
+
+            <button id="btn-post-continue"
+                class="w-full mt-8 bg-acc-green hover:brightness-95 text-primary font-bold py-4 rounded-2xl shadow-lg transition-transform hover:scale-[1.02]">
+                CONTINUAR <i class="fas fa-arrow-right ml-2"></i>
+            </button>
+        </div>
+    </div>
 
     <!-- MODAL: SESSION SUMMARY -->
     <div id="modal-summary"

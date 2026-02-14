@@ -2,7 +2,7 @@ import { db } from "../services/firebaseConfig.js";
 import { collection, addDoc } from "firebase/firestore";
 import { getCurrentUser } from "./auth.js";
 import { formatTime, showAlert, getStyle } from "./utils.js";
-import { loadHistory } from "./data.js";
+import { loadHistory, getSubjects, getMethods } from "./data.js";
 import { getFeedback } from "./feedback.js";
 import { renderDailyPlan } from "./dailyGoal.js"; // New Import
 
@@ -21,6 +21,13 @@ const dom = {
     overlay: () => document.getElementById('overlay-paused'),
     reasonDisp: () => document.getElementById('pause-reason-display'),
     btnToggleSecs: () => document.getElementById('btn-toggle-seconds'),
+    // Post Session Modal
+    postModal: () => document.getElementById('modal-post-session'),
+    postSub: () => document.getElementById('post-subject'),
+    postGoal: () => document.getElementById('post-goal'),
+    postGoalWrap: () => document.getElementById('post-goal-wrapper'),
+    postMeth: () => document.getElementById('post-method'),
+    btnPostContinue: () => document.getElementById('btn-post-continue'),
     // Summary Modal
     summaryModal: () => document.getElementById('modal-summary'),
     sumPhrase: () => document.getElementById('sum-phrase'),
@@ -82,8 +89,11 @@ export const initTimer = () => {
     if (btnSec) btnSec.onclick = toggleSeconds;
 
     // Goal Filter Logic
-    document.getElementById('sel-subject').onchange = updateGoalDropdown;
-    document.addEventListener('goals-updated', updateGoalDropdown); // Listen for data changes
+    if (dom.postSub()) dom.postSub().onchange = updatePostGoalDropdown;
+    document.addEventListener('goals-updated', updatePostGoalDropdown); // Listen for data changes
+
+    // Post Session Resume
+    if (dom.btnPostContinue()) dom.btnPostContinue().onclick = completeSession;
 
     renderSettingsUI();
     initDebug();
@@ -124,7 +134,7 @@ const simulateSession = (totalMin, intCount, intMin) => {
     // Set global activeSession (bypass checks)
     activeSession = {
         uid: getCurrentUser() ? getCurrentUser().uid : 'guest',
-        subject: document.getElementById('sel-subject').value || 'Debug Matter',
+        subject: 'Debug Matter',
         method: 'Debug Method',
         goalId: null,
         startTime: now - totalMs,
@@ -136,18 +146,16 @@ const simulateSession = (totalMin, intCount, intMin) => {
     stopSession();
 };
 
-const updateGoalDropdown = () => {
-    const sub = document.getElementById('sel-subject').value;
-    const goalWrap = document.getElementById('setup-goal-wrapper');
-    const goalSel = document.getElementById('sel-goal');
+const updatePostGoalDropdown = () => {
+    const sub = dom.postSub().value;
+    const goalWrap = dom.postGoalWrap();
+    const goalSel = dom.postGoal();
 
     if (!sub) {
         goalWrap.classList.add('hidden');
         return;
     }
 
-    // dynamic import to avoid circular dependency issues at top level if not careful, 
-    // but we can assume getCurrentGoals is available if we import it.
     import('./goals.js').then(({ getCurrentGoals }) => {
         const goals = getCurrentGoals().filter(g => g.subject === sub && g.status === 'active');
 
@@ -163,17 +171,11 @@ const updateGoalDropdown = () => {
 };
 
 const startSession = () => {
-    const sub = document.getElementById('sel-subject').value;
-    const met = document.getElementById('sel-method').value;
-    const goalId = document.getElementById('sel-goal').value;
-
-    if (!sub) return showAlert("Selecciona una materia");
-
     activeSession = {
         uid: getCurrentUser() ? getCurrentUser().uid : 'guest',
-        subject: sub,
-        method: met,
-        goalId: goalId || null,
+        subject: 'Sin asignar',
+        method: 'Cronómetro',
+        goalId: null,
         startTime: Date.now(),
         interruptions: [],
         status: 'running'
@@ -268,6 +270,51 @@ const resumeSession = () => {
 
 const stopSession = async () => {
     clearInterval(timerInterval);
+    populatePostSessionModal();
+    dom.postModal().classList.remove('hidden');
+};
+
+const populatePostSessionModal = () => {
+    // 1. Subjects
+    const subs = getSubjects();
+    dom.postSub().innerHTML = subs.map(s => `<option value="${s}">${s}</option>`).join('');
+
+    // 2. Methods
+    const mets = getMethods();
+    dom.postMeth().innerHTML = mets.map(m => `<option value="${m}">${m}</option>`).join('');
+
+    // 3. Autocomplete from local storage
+    const lastSub = localStorage.getItem('last_subject');
+    const lastMet = localStorage.getItem('last_method');
+
+    if (lastSub && subs.includes(lastSub)) dom.postSub().value = lastSub;
+    if (lastMet && mets.includes(lastMet)) dom.postMeth().value = lastMet;
+
+    // Trigger goal update
+    updatePostGoalDropdown();
+};
+
+const completeSession = async () => {
+    const sub = dom.postSub().value;
+    const met = dom.postMeth().value;
+    const goalId = dom.postGoal().value;
+
+    if (!sub || !met) return showAlert("Por favor completa la información.");
+
+    // Update Session
+    activeSession.subject = sub;
+    activeSession.method = met;
+    activeSession.goalId = goalId || null;
+
+    // Save defaults
+    localStorage.setItem('last_subject', sub);
+    localStorage.setItem('last_method', met);
+
+    dom.postModal().classList.add('hidden');
+    finalizeSessionProcessing();
+};
+
+const finalizeSessionProcessing = async () => {
     const now = Date.now();
     let totalPaused = activeSession.interruptions.reduce((acc, i) => acc + (i.duration || 0), 0);
     const gross = now - activeSession.startTime;
