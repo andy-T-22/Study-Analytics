@@ -21,6 +21,7 @@ const dom = {
     methDisp: () => document.getElementById('active-method'),
     overlay: () => document.getElementById('overlay-paused'),
     reasonDisp: () => document.getElementById('pause-reason-display'),
+    restDisplay: () => document.getElementById('rest-timer-display'),
     btnToggleSecs: () => document.getElementById('btn-toggle-seconds'),
     btnToggleFav: () => document.getElementById('btn-toggle-favicon'),
     // Post Session Modal
@@ -76,6 +77,7 @@ export const initTimer = () => {
     };
     document.getElementById('btn-cancel-pause').onclick = () => {
         document.getElementById('modal-pause').classList.add('hidden');
+        resumeSession(); // Resume if cancelled
     };
 
     // Overlay Resume
@@ -104,55 +106,8 @@ export const initTimer = () => {
     if (dom.btnPostContinue()) dom.btnPostContinue().onclick = completeSession;
 
     renderSettingsUI();
-    initDebug();
 };
 
-const initDebug = () => {
-    const btn = document.getElementById('btn-debug-sim');
-    if (btn) {
-        btn.onclick = () => {
-            const totalMin = parseInt(document.getElementById('dbg-total').value) || 60;
-            const count = parseInt(document.getElementById('dbg-count').value) || 0;
-            const intMin = parseInt(document.getElementById('dbg-int-min').value) || 0;
-            simulateSession(totalMin, count, intMin);
-        };
-    }
-};
-
-const simulateSession = (totalMin, intCount, intMin) => {
-    // Force close settings header
-    document.getElementById('modal-settings').classList.add('hidden');
-
-    const now = Date.now();
-    const totalMs = totalMin * 60000;
-    const intMs = intMin * 60000;
-
-    // Create fake interruptions
-    const interruptions = [];
-    if (intCount > 0) {
-        const avgInt = intMs / intCount;
-        for (let i = 0; i < intCount; i++) {
-            interruptions.push({
-                duration: avgInt,
-                reason: 'Simulated Debug'
-            });
-        }
-    }
-
-    // Set global activeSession (bypass checks)
-    activeSession = {
-        uid: getCurrentUser() ? getCurrentUser().uid : 'guest',
-        subject: 'Debug Matter',
-        method: 'Debug Method',
-        goalId: null,
-        startTime: now - totalMs,
-        interruptions: interruptions,
-        status: 'running'
-    };
-
-    // Trigger stop logic immediately
-    stopSession();
-};
 
 const updatePostGoalDropdown = () => {
     const sub = dom.postSub().value;
@@ -210,31 +165,42 @@ const startLoop = () => {
 };
 
 const tick = () => {
-    if (!activeSession || activeSession.status !== 'running') return;
+    if (!activeSession) return;
 
-    const now = Date.now();
-    const totalPaused = activeSession.interruptions.reduce((acc, i) => acc + (i.duration || 0), 0);
-    const gross = now - activeSession.startTime;
-    const net = Math.max(0, gross - totalPaused);
+    if (activeSession.status === 'running') {
+        const now = Date.now();
+        const totalPaused = activeSession.interruptions.reduce((acc, i) => acc + (i.duration || 0), 0);
+        const gross = now - activeSession.startTime;
+        const net = Math.max(0, gross - totalPaused);
 
-    const timeStr = formatTime(net, appSettings.showSeconds);
-    dom.display().textContent = timeStr;
-    document.title = `${timeStr} - Focus Analytics`;
+        const timeStr = formatTime(net, appSettings.showSeconds);
+        dom.display().textContent = timeStr;
+        document.title = `${timeStr} - Study Meter`;
+    } else if (activeSession.status === 'paused') {
+        const now = Date.now();
+        const pauseDur = now - activeSession.pauseStart;
+        const timeStr = formatTime(pauseDur, true); // Always show seconds for pause
+        if (dom.restDisplay()) dom.restDisplay().textContent = timeStr;
+        const modalTimer = document.getElementById('pause-timer-modal');
+        if (modalTimer) modalTimer.textContent = timeStr;
+        document.title = `⏸️ ${timeStr} - Descanso`;
+    }
 };
 
 // --- PAUSE ---
 const promptPause = () => {
+    activeSession.status = 'paused';
+    activeSession.pauseStart = Date.now();
+    saveLocal();
+    faviconAnimator.pause();
     document.getElementById('modal-pause').classList.remove('hidden');
 };
 
 const confirmPause = (reason) => {
     document.getElementById('modal-pause').classList.add('hidden');
-    activeSession.status = 'paused';
-    activeSession.pauseStart = Date.now();
     activeSession.currentPauseReason = reason;
     saveLocal();
 
-    clearInterval(timerInterval);
     pauseTimerUI(activeSession);
 };
 
@@ -253,7 +219,7 @@ const pauseTimerUI = (session) => {
     const net = Math.max(0, (now - session.startTime) - totalPaused);
     const timeStr = formatTime(net, appSettings.showSeconds);
     dom.display().textContent = timeStr;
-    document.title = `⏸️ ${timeStr} - Focus Analytics`;
+    document.title = `⏸️ ${timeStr} - Study Meter`;
 };
 
 const resumeSession = () => {
@@ -401,7 +367,7 @@ const closeSummaryAndReset = () => {
     renderDailyPlan();
 
     dom.display().textContent = "00:00";
-    document.title = "Focus Analytics";
+    document.title = "Study Meter";
 
     // Reload history to show new entry
     loadHistory();

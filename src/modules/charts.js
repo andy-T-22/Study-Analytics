@@ -46,6 +46,46 @@ export const updateCharts = () => {
     renderSubjectsChart(subjectMap);
     renderInterruptionsChart(interruptionMap);
     renderWeeklyChart(filteredData);
+
+    // Toggle Empty State Visibility
+    const dashboardSection = document.getElementById('view-dashboard');
+    if (filteredData.length === 0) {
+        showEmptyState(dashboardSection);
+    } else {
+        hideEmptyState(dashboardSection);
+    }
+};
+
+const showEmptyState = (container) => {
+    let emptyEl = container.querySelector('.empty-state-overlay');
+    if (emptyEl) return;
+
+    emptyEl = document.createElement('div');
+    emptyEl.className = 'empty-state-overlay p-12 text-center flex flex-col items-center justify-center space-y-4';
+    emptyEl.innerHTML = `
+        <div class="w-20 h-20 bg-acc-blue/10 rounded-full flex items-center justify-center text-3xl">🏜️</div>
+        <h3 class="text-lg font-bold text-primary">Aún no hay datos para mostrar</h3>
+        <p class="text-sm text-secondary max-w-xs mx-auto">No se encontraron sesiones en este periodo. ¡Es un excelente momento para iniciar tu primer bloque de estudio!</p>
+        <button onclick="document.getElementById('tab-tracker').click()" class="bg-acc-blue hover:brightness-95 text-primary font-bold px-6 py-2 rounded-xl transition-all shadow-sm">
+            Ir al Cronómetro
+        </button>
+    `;
+
+    // Insert after filters but before charts grid
+    const filters = container.querySelector('.flex.flex-col.gap-4');
+    filters.after(emptyEl);
+
+    // Hide the grid
+    const grid = container.querySelector('.grid');
+    if (grid) grid.classList.add('hidden');
+};
+
+const hideEmptyState = (container) => {
+    const emptyEl = container.querySelector('.empty-state-overlay');
+    if (emptyEl) emptyEl.remove();
+
+    const grid = container.querySelector('.grid');
+    if (grid) grid.classList.remove('hidden');
 };
 
 // --- CHART RENDERS ---
@@ -67,7 +107,7 @@ const renderEfficiencyChart = (eff) => {
                 borderWidth: 0
             }]
         },
-        options: { cutout: '80%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        options: { animation: false, cutout: '80%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
 };
 
@@ -86,6 +126,7 @@ const renderSubjectsChart = (map) => {
             datasets: [{ label: 'Horas', data: hours, backgroundColor: getStyle('--acc-blue'), borderRadius: 6 }]
         },
         options: {
+            animation: false,
             responsive: true, maintainAspectRatio: false,
             scales: {
                 y: { beginAtZero: true, grid: { color: getStyle('--border-color') }, ticks: { color: getStyle('--text-secondary') } },
@@ -110,6 +151,7 @@ const renderInterruptionsChart = (map) => {
             datasets: [{ label: 'Cantidad', data: entries.map(e => e[1]), backgroundColor: getStyle('--acc-peach'), borderRadius: 6 }]
         },
         options: {
+            animation: false,
             responsive: true, maintainAspectRatio: false, indexAxis: 'y',
             scales: {
                 x: { beginAtZero: true, grid: { color: getStyle('--border-color') }, ticks: { stepSize: 1, color: getStyle('--text-secondary') } },
@@ -205,6 +247,7 @@ export const renderWeeklyChart = (data) => {
             }]
         },
         options: {
+            animation: false,
             indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
@@ -322,6 +365,7 @@ export const renderTimeline = (session) => {
             datasets: [dsStudy, dsPause]
         },
         options: {
+            animation: false,
             indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
@@ -456,12 +500,13 @@ export const renderHistoryList = (listData) => {
     // Slice Data
     const visibleData = listData.slice(0, historyLimit);
 
-    visibleData.forEach(d => {
+    visibleData.forEach((d, index) => {
         const dateStr = new Date(d.startTime).toLocaleDateString();
         const mins = Math.floor(d.netDuration / 60000);
 
         const tr = document.createElement('tr');
-        tr.className = "cursor-pointer hover:brightness-95 transition-all border-b border-theme last:border-0 group bg-card";
+        tr.className = "cursor-pointer hover:brightness-95 transition-all border-b border-theme last:border-0 group bg-card animate-row-fade";
+        tr.style.animationDelay = `${index * 0.05}s`;
         tr.onclick = () => openSessionDetails(d.id);
 
         tr.innerHTML = `

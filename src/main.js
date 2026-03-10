@@ -7,6 +7,7 @@ import { formatTime, showAlert, showConfirm } from './modules/utils.js';
 import { db } from './services/firebaseConfig.js';
 import { doc, updateDoc, deleteDoc, addDoc, collection } from 'firebase/firestore'; loadHistory();
 import { loadHistory } from './modules/data.js';
+import { toast } from './modules/toasts.js';
 
 import { initDailyGoalPanel, renderDailyPlan } from './modules/dailyGoal.js';
 
@@ -17,6 +18,12 @@ document.addEventListener('DOMContentLoaded', () => {
     initTimer();
     initDailyGoalPanel(); // New
     bindGlobalEvents();
+
+    // Fade out splash screen after small delay
+    setTimeout(() => {
+        const splash = document.getElementById('splash-screen');
+        if (splash) splash.classList.add('fade-out');
+    }, 1200);
 });
 
 // --- ABSOLUTELY NECESSARY GLOBALS (Glue) ---

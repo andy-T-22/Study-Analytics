@@ -1,3 +1,5 @@
+import { toast } from "./toasts.js";
+
 export const formatTime = (ms, showSeconds = true) => {
     const totalSecs = Math.floor(ms / 1000);
     const h = Math.floor(totalSecs / 3600);
@@ -15,30 +17,9 @@ export const getStyle = (varName) => {
     return getComputedStyle(document.body).getPropertyValue(varName).trim();
 };
 
-export const showAlert = (msg, title = "Información") => {
-    // Uses the generic modal instead of native alert
-    const overlay = document.getElementById('modal-generic');
-    const tEl = document.getElementById('modal-title');
-    const mEl = document.getElementById('modal-msg');
-    const actEl = document.getElementById('modal-actions');
-
-    if (!overlay) {
-        alert(msg);
-        return;
-    }
-
-    tEl.textContent = title;
-    mEl.innerHTML = msg.replace(/\n/g, '<br>'); // Support basic newlines
-    actEl.innerHTML = '';
-
-    const btn = document.createElement('button');
-    btn.textContent = 'Aceptar';
-    btn.className = 'px-6 py-2 rounded-lg text-sm font-bold bg-[#a5ccf5] text-[#5c554b] hover:bg-[#74a8db] transition-colors';
-    btn.onclick = () => overlay.classList.remove('open');
-    actEl.appendChild(btn);
-
-    overlay.classList.add('open');
-}
+export const showAlert = (msg, type = 'info') => {
+    toast.show(msg, type);
+};
 
 export const showConfirm = (title, msg, onConfirm) => {
     const overlay = document.getElementById('modal-generic');
