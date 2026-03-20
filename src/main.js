@@ -5,7 +5,7 @@ import { initTimer } from './modules/timer.js';
 import { updateCharts, applyHistoryFilters, renderTimeline, resetHistoryLimit } from './modules/charts.js'; // Ensure correct imports
 import { formatTime, showAlert, showConfirm } from './modules/utils.js';
 import { db } from './services/firebaseConfig.js';
-import { doc, updateDoc, deleteDoc, addDoc, collection } from 'firebase/firestore'; loadHistory();
+import { doc, updateDoc, deleteDoc, addDoc, collection } from 'firebase/firestore';
 import { loadHistory } from './modules/data.js';
 import { toast } from './modules/toasts.js';
 
@@ -55,15 +55,22 @@ const bindGlobalEvents = () => {
     };
 
     // Filters
-    document.getElementById('dash-filter-period').onchange = () => toggleCustomDate('dash');
-    document.getElementById('dash-start').onchange = updateCharts;
-    document.getElementById('dash-end').onchange = updateCharts;
-    document.getElementById('dash-filter-subject').onchange = updateCharts;
+    const triggerGlobalFilters = () => {
+        updateCharts();
+        resetHistoryLimit();
+        applyHistoryFilters();
+        import('./modules/goalsUI.js').then(m => {
+            import('./modules/goals.js').then(g => m.renderGoals(g.getCurrentGoals()));
+        });
+    };
 
-    document.getElementById('hist-filter-period').onchange = () => { toggleCustomDate('hist'); resetHistoryLimit(); applyHistoryFilters(); };
-    document.getElementById('hist-filter-start').onchange = () => { resetHistoryLimit(); applyHistoryFilters(); };
-    document.getElementById('hist-filter-end').onchange = () => { resetHistoryLimit(); applyHistoryFilters(); };
-    document.getElementById('hist-filter-subject').onchange = () => { resetHistoryLimit(); applyHistoryFilters(); };
+    document.getElementById('global-filter-period').onchange = () => {
+        toggleCustomDate('global');
+        triggerGlobalFilters();
+    };
+    document.getElementById('global-start').onchange = triggerGlobalFilters;
+    document.getElementById('global-end').onchange = triggerGlobalFilters;
+    document.getElementById('global-filter-subject').onchange = triggerGlobalFilters;
 
     // Manual Entry
     // Manual Entry
@@ -87,23 +94,77 @@ const switchTab = (tab) => {
             btn.classList.add('tab-active');
             btn.classList.remove('tab-inactive');
             view.classList.remove('hidden');
+            // Trigger animation restart
+            view.classList.remove('fade-in');
+            void view.offsetWidth;
+            view.classList.add('fade-in');
         } else {
             btn.classList.remove('tab-active');
             btn.classList.add('tab-inactive');
             view.classList.add('hidden');
         }
     });
+
+    // Toggle global filters and contextual buttons visibility
+    const topBar = document.getElementById('top-bar');
+    const globalCustomDate = document.getElementById('global-custom-date');
+    const btnAddGoal = document.getElementById('btn-add-goal');
+    const btnManualEntry = document.getElementById('btn-manual-entry');
+
+    if (topBar) {
+        if (tab === 'tracker') {
+            topBar.classList.add('hidden');
+            topBar.classList.remove('flex');
+            if (globalCustomDate) {
+                globalCustomDate.classList.add('hidden');
+                globalCustomDate.classList.remove('flex');
+            }
+        } else {
+            topBar.classList.remove('hidden');
+            topBar.classList.add('flex');
+            
+            // Re-check custom date
+            const pVal = document.getElementById('global-filter-period')?.value;
+            if (pVal === 'custom' && globalCustomDate) {
+                globalCustomDate.classList.remove('hidden');
+                globalCustomDate.classList.add('flex');
+            }
+        }
+    }
+
+    if (btnAddGoal) {
+        if (tab === 'goals') {
+            btnAddGoal.classList.remove('hidden');
+            btnAddGoal.classList.add('flex');
+        } else {
+            btnAddGoal.classList.add('hidden');
+            btnAddGoal.classList.remove('flex');
+        }
+    }
+
+    if (btnManualEntry) {
+        if (tab === 'history') {
+            btnManualEntry.classList.remove('hidden');
+            btnManualEntry.classList.add('flex');
+        } else {
+            btnManualEntry.classList.add('hidden');
+            btnManualEntry.classList.remove('flex');
+        }
+    }
+
     if (tab === 'dashboard') updateCharts();
 };
 
 const toggleCustomDate = (prefix) => {
     const val = document.getElementById(`${prefix}-filter-period`).value;
     const div = document.getElementById(`${prefix}-custom-date`);
-    if (val === 'custom') div.classList.remove('hidden');
-    else div.classList.add('hidden');
-
-    if (prefix === 'dash') updateCharts();
-    else applyHistoryFilters();
+    if (val === 'custom') {
+        div.classList.remove('hidden');
+        div.classList.add('flex');
+    } else {
+        div.classList.add('hidden');
+        div.classList.remove('flex');
+    }
 };
 
 // --- NEW SESSION LOGIC ---

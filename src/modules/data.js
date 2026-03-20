@@ -149,8 +149,7 @@ const renderAllDropdowns = () => {
         el.innerHTML = `<option value="all">Todas</option>` + list.map(i => `<option value="${i}">${i}</option>`).join('');
         el.value = current;
     };
-    popFilter('dash-filter-subject', subjects);
-    popFilter('hist-filter-subject', subjects);
+    popFilter('global-filter-subject', subjects);
 
     renderPauseButtons();
 };

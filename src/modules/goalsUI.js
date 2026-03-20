@@ -7,7 +7,35 @@ export const renderGoals = (goals) => {
     const list = document.getElementById('goals-grid');
     if (!list) return;
 
-    if (goals.length === 0) {
+    // Apply global filter
+    const subjectFilter = document.getElementById('global-filter-subject')?.value;
+    const periodFilter = document.getElementById('global-filter-period')?.value;
+    
+    let filteredGoals = goals;
+    if (subjectFilter && subjectFilter !== 'all') {
+        filteredGoals = filteredGoals.filter(g => g.subject === subjectFilter);
+    }
+    
+    if (periodFilter && periodFilter !== 'all') {
+        const now = Date.now();
+        const oneDay = 86400000;
+        
+        if (periodFilter === 'today') {
+            filteredGoals = filteredGoals.filter(g => (now - g.createdAt) < oneDay);
+        } else if (periodFilter === 'week') {
+            filteredGoals = filteredGoals.filter(g => (now - g.createdAt) < 7 * oneDay);
+        } else if (periodFilter === 'month') {
+            filteredGoals = filteredGoals.filter(g => (now - g.createdAt) < 30 * oneDay);
+        } else if (periodFilter === 'custom') {
+            const sVal = document.getElementById('global-start')?.value;
+            const eVal = document.getElementById('global-end')?.value;
+            const startT = sVal ? new Date(sVal).getTime() : 0;
+            const endT = eVal ? new Date(eVal).setHours(23,59,59,999) : Infinity;
+            filteredGoals = filteredGoals.filter(g => g.createdAt >= startT && g.createdAt <= endT);
+        }
+    }
+
+    if (filteredGoals.length === 0) {
         list.innerHTML = `
             <div class="col-span-full py-12 text-center text-secondary border-2 border-dashed border-theme rounded-3xl">
                 <div class="text-4xl mb-4">🎯</div>
@@ -17,11 +45,11 @@ export const renderGoals = (goals) => {
         `;
         const btn = document.getElementById('btn-create-first-goal');
         if (btn) btn.onclick = openCreateGoalModal;
-        updateGoalSelects(goals); // Update dropdowns even if empty
+        updateGoalSelects(filteredGoals); // Update dropdowns even if empty
         return;
     }
 
-    list.innerHTML = goals.map(g => {
+    list.innerHTML = filteredGoals.map(g => {
         const percent = Math.min(100, Math.round(((g.accumulatedHours || 0) / g.targetHours) * 100));
 
         // Use Persisted/Stable Pace
@@ -79,12 +107,12 @@ export const renderGoals = (goals) => {
 
     list.querySelectorAll('.btn-view-sessions').forEach(b => {
         b.onclick = () => {
-            const goal = goals.find(g => g.id === b.dataset.id);
+            const goal = filteredGoals.find(g => g.id === b.dataset.id);
             if (goal) openGoalSessions(goal);
         };
     });
 
-    updateGoalSelects(goals);
+    updateGoalSelects(filteredGoals);
 };
 
 const openGoalSessions = (goal) => {

@@ -122,6 +122,63 @@
 
             <!-- CONTENT AREA -->
             <main class="flex-grow p-4 md:p-8 max-w-5xl mx-auto w-full relative">
+                <!-- TOP BAR (Filters + Context Actions) -->
+                <div id="top-bar" class="hidden flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 fade-in w-full">
+                    <!-- Left: Global Filters Container -->
+                    <div id="global-filters" class="bg-card p-2 px-4 rounded-xl border border-theme shadow-sm w-full md:w-auto flex flex-wrap items-center gap-4">
+                        <div class="flex items-center gap-2">
+                             <i class="fas fa-filter text-secondary"></i>
+                             <span class="text-sm font-bold text-primary">Filtros</span>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <!-- Subject Filter -->
+                            <select id="global-filter-subject"
+                                class="p-1.5 px-2 rounded-lg text-xs font-bold border border-theme outline-none focus:ring-2 focus:ring-blue-300">
+                                <option value="all">Todas las Materias</option>
+                            </select>
+
+                            <!-- Quick Period Filter -->
+                            <select id="global-filter-period"
+                                class="p-1.5 px-2 rounded-lg text-xs font-bold border border-theme outline-none focus:ring-2 focus:ring-blue-300">
+                                <option value="today">Hoy</option>
+                                <option value="week" selected>Última Semana</option>
+                                <option value="month">Último Mes</option>
+                                <option value="all">Todo el Historial</option>
+                                <option value="custom">Personalizado...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Right: Contextual Buttons -->
+                    <div id="top-actions" class="flex-shrink-0 flex justify-end gap-2 w-full md:w-auto">
+                        <button id="btn-add-goal"
+                            class="hidden bg-acc-blue hover:brightness-95 text-primary px-5 py-2.5 rounded-xl font-bold text-xs shadow-sm transition-transform hover:scale-105 items-center gap-2">
+                            <i class="fas fa-plus"></i> Nueva Meta
+                        </button>
+                        <button id="btn-manual-entry"
+                            class="hidden bg-acc-blue hover:brightness-95 text-primary px-5 py-2.5 rounded-xl font-bold text-xs shadow-sm transition-transform hover:scale-105 items-center gap-2">
+                            <i class="fas fa-plus"></i> Agregar Sesión
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Advanced Custom Date (Hidden by default, shifted below) -->
+                <div id="global-custom-date"
+                    class="hidden mb-6 bg-card p-3 rounded-xl border border-theme shadow-sm flex gap-4 items-center justify-start transition-all">
+                    <div class="flex gap-2 items-center">
+                        <div class="flex flex-col">
+                            <label class="text-[10px] text-secondary font-bold uppercase pl-1">Desde</label>
+                            <input type="date" id="global-start"
+                                class="text-xs bg-card border border-theme rounded p-1 outline-none" />
+                        </div>
+                        <div class="flex flex-col">
+                            <label class="text-[10px] text-secondary font-bold uppercase pl-1">Hasta</label>
+                            <input type="date" id="global-end"
+                                class="text-xs bg-card border border-theme rounded p-1 outline-none" />
+                        </div>
+                    </div>
+                </div>
+
                 <!-- TRACKER VIEW -->
                 <section id="view-tracker" class="fade-in space-y-8">
                     <div class="flex justify-end">
@@ -191,50 +248,7 @@
                 </section>
 
                 <!-- DASHBOARD VIEW -->
-                <section id="view-dashboard" class="hidden space-y-6">
-                    <!-- GLOBAL FILTERS -->
-                    <div class="flex flex-col gap-4 bg-card p-4 rounded-2xl border border-theme shadow-sm">
-                        <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                            <h2 class="text-lg font-bold text-primary">
-                                Panel de Análisis
-                            </h2>
-                            <div class="flex items-center gap-2">
-                                <!-- Subject Filter -->
-                                <select id="dash-filter-subject"
-                                    class="p-2 rounded-lg text-sm border border-theme outline-none focus:ring-2 focus:ring-blue-300">
-                                    <option value="all">Todas las Materias</option>
-                                </select>
-
-                                <!-- Quick Period Filter -->
-                                <select id="dash-filter-period"
-                                    class="p-2 rounded-lg text-sm border border-theme outline-none focus:ring-2 focus:ring-blue-300">
-                                    <option value="week" selected>Última Semana</option>
-                                    <option value="today">Hoy</option>
-                                    <option value="month">Último Mes</option>
-                                    <option value="all">Todo el Historial</option>
-                                    <option value="custom">Personalizado...</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Advanced Custom Date - Hidden by default -->
-                        <div id="dash-custom-date"
-                            class="hidden flex gap-4 items-center justify-end border-t border-theme pt-3 transition-all">
-                            <div class="flex gap-2 items-center">
-                                <div class="flex flex-col">
-                                    <label class="text-[10px] text-secondary font-bold uppercase pl-1">Desde</label>
-                                    <input type="date" id="dash-start"
-                                        class="text-xs bg-card border border-theme rounded p-1 outline-none" />
-                                </div>
-                                <div class="flex flex-col">
-                                    <label class="text-[10px] text-secondary font-bold uppercase pl-1">Hasta</label>
-                                    <input type="date" id="dash-end"
-                                        class="text-xs bg-card border border-theme rounded p-1 outline-none" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
+                <section id="view-dashboard" class="hidden fade-in space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Stat Card -->
                         <div class="glass p-6 rounded-3xl">
@@ -299,14 +313,6 @@
 
                 <!-- GOALS VIEW -->
                 <section id="view-goals" class="hidden fade-in space-y-8">
-                    <div class="flex justify-between items-center">
-                        <h2 class="text-2xl font-black text-primary tracking-tight">Mis Objetivos</h2>
-                        <button id="btn-add-goal"
-                            class="bg-acc-blue hover:brightness-95 text-primary px-6 py-3 rounded-2xl font-bold text-sm shadow-lg transition-transform hover:scale-105 flex items-center gap-2">
-                            <i class="fas fa-plus"></i> Nueva Meta
-                        </button>
-                    </div>
-
                     <div id="goals-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <!-- Injected via goalsUI.js -->
                     </div>
@@ -314,52 +320,6 @@
 
                 <!-- HISTORY VIEW -->
                 <section id="view-history" class="hidden fade-in">
-                    <div class="flex flex-col md:flex-row justify-between items-end mb-4 gap-4">
-                        <div
-                            class="flex flex-wrap gap-2 items-center bg-card p-2 rounded-xl border border-theme shadow-sm">
-                            <!-- Quick Filter -->
-                            <div class="flex flex-col">
-                                <label class="text-[10px] text-secondary font-bold uppercase pl-1">Periodo</label>
-                                <select id="hist-filter-period"
-                                    class="bg-transparent text-primary text-xs font-bold outline-none border-none cursor-pointer hover:bg-white/5 rounded p-1">
-                                    <option value="today">Hoy</option>
-                                    <option value="week" selected>Semana</option>
-                                    <option value="all">Todo</option>
-                                    <option value="custom">Personalizado...</option>
-                                </select>
-                            </div>
-
-                            <!-- Custom Range -->
-                            <div id="hist-custom-date" class="hidden flex gap-2 items-center">
-                                <div class="flex flex-col">
-                                    <label class="text-[10px] text-secondary font-bold uppercase pl-1">Desde</label>
-                                    <input type="date" id="hist-filter-start"
-                                        class="text-xs bg-transparent outline-none p-1" />
-                                </div>
-                                <div class="h-8 w-px bg-theme"></div>
-                                <div class="flex flex-col">
-                                    <label class="text-[10px] text-secondary font-bold uppercase pl-1">Hasta</label>
-                                    <input type="date" id="hist-filter-end"
-                                        class="text-xs bg-transparent outline-none p-1" />
-                                </div>
-                            </div>
-
-                            <div class="h-8 w-px bg-theme"></div>
-
-                            <div class="flex flex-col min-w-[100px]">
-                                <label class="text-[10px] text-secondary font-bold uppercase pl-1">Materia</label>
-                                <select id="hist-filter-subject" class="text-xs bg-transparent outline-none p-1 w-full">
-                                    <option value="all">Todas</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <button id="btn-manual-entry"
-                            class="bg-acc-blue hover:brightness-95 text-primary px-6 py-3 rounded-2xl font-bold text-sm shadow-lg transition-transform hover:scale-105 flex items-center gap-2">
-                            <i class="fas fa-plus"></i> Agregar Sesión
-                        </button>
-                    </div>
-
                     <div class="glass rounded-3xl overflow-hidden shadow-sm">
                         <table class="w-full text-left text-sm text-primary">
                             <thead class="bg-main uppercase text-xs font-bold text-secondary border-b border-theme">

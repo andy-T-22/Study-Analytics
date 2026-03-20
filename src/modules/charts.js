@@ -419,16 +419,12 @@ export const renderTimeline = (session) => {
 // --- HISTORY TABLE & FILTERS ---
 // Logic moved here as it is "View" logic heavily tied to data
 
-const getFilterFunction = (prefix = 'dash') => {
-    const periodVal = document.getElementById(`${prefix}-filter-period`)?.value || 'week';
-    const subVal = document.getElementById(`${prefix}-filter-subject`)?.value;
-    const startVal = document.getElementById(`${prefix}-start`)?.value; // Dash uses dash-start, Hist uses hist-filter-start? 
-    // Normalized in new HTML? No, kept IDs. 
-    // Dash: dash-filter-period / dash-custom-date (dash-start, dash-end)
-    // Hist: hist-filter-period / hist-custom-date (hist-filter-start, hist-filter-end)
+const getFilterFunction = () => {
+    const periodVal = document.getElementById(`global-filter-period`)?.value || 'week';
+    const subVal = document.getElementById(`global-filter-subject`)?.value;
 
-    const sEl = document.getElementById(prefix === 'dash' ? 'dash-start' : 'hist-filter-start');
-    const eEl = document.getElementById(prefix === 'dash' ? 'dash-end' : 'hist-filter-end');
+    const sEl = document.getElementById('global-start');
+    const eEl = document.getElementById('global-end');
 
     const now = Date.now();
     const oneDay = 86400000;
@@ -463,7 +459,7 @@ export const applyHistoryFilters = () => {
     const data = window.globalSessionCache;
     if (!data) return;
 
-    const filter = getFilterFunction('hist');
+    const filter = getFilterFunction();
     const filtered = data.filter(filter);
 
     // Sort Desc
