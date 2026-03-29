@@ -256,6 +256,7 @@ const enableEdit = (index, iconEl) => {
     if (input.readOnly) {
         input.readOnly = false;
         input.focus();
+        input.select(); // Select all text to allow instant overwrite
         iconEl.className = "fas fa-check text-green-500";
         // Override click to save
         iconEl.parentElement.onclick = () => saveEdit(index, input.value);
@@ -270,6 +271,10 @@ const saveEdit = (index, newValue) => {
 
     if (newValue.trim()) {
         listData[index] = newValue.trim();
+        savePreferences();
+        renderManagerList();
+    } else {
+        listData.splice(index, 1);
         savePreferences();
         renderManagerList();
     }
@@ -304,6 +309,8 @@ const addManagerItem = () => {
             // Find the edit button for this index
             const btn = input.nextElementSibling.querySelector('button');
             if (btn) btn.click();
+            input.value = "";
+            input.placeholder = "Nuevo Elemento";
         }
     });
 };
