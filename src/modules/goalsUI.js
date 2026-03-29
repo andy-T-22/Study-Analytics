@@ -19,13 +19,14 @@ export const renderGoals = (goals) => {
     if (periodFilter && periodFilter !== 'all') {
         const now = Date.now();
         const oneDay = 86400000;
+        const todayStart = new Date().setHours(0,0,0,0);
         
         if (periodFilter === 'today') {
-            filteredGoals = filteredGoals.filter(g => (now - g.createdAt) < oneDay);
+            filteredGoals = filteredGoals.filter(g => (now - g.createdAt) < oneDay || new Date(g.examDate).getTime() >= todayStart);
         } else if (periodFilter === 'week') {
-            filteredGoals = filteredGoals.filter(g => (now - g.createdAt) < 7 * oneDay);
+            filteredGoals = filteredGoals.filter(g => (now - g.createdAt) < 7 * oneDay || new Date(g.examDate).getTime() >= todayStart);
         } else if (periodFilter === 'month') {
-            filteredGoals = filteredGoals.filter(g => (now - g.createdAt) < 30 * oneDay);
+            filteredGoals = filteredGoals.filter(g => (now - g.createdAt) < 30 * oneDay || new Date(g.examDate).getTime() >= todayStart);
         } else if (periodFilter === 'custom') {
             const sVal = document.getElementById('global-start')?.value;
             const eVal = document.getElementById('global-end')?.value;
