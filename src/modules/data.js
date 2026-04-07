@@ -214,7 +214,11 @@ const renderAllDropdowns = () => {
     const pop = (id, list) => {
         const el = document.getElementById(id);
         if (!el) return;
+        const current = el.value;
         el.innerHTML = list.map(i => `<option value="${i}">${i}</option>`).join('');
+        if (current && list.includes(current)) {
+            el.value = current;
+        }
     };
 
     // Tracker Setup
@@ -224,6 +228,14 @@ const renderAllDropdowns = () => {
     // Manual Entry
     pop('man-subject', subjects);
     pop('man-method', methods);
+
+    // Post Session Entry
+    pop('post-subject', subjects);
+    pop('post-method', methods);
+
+    // Detail Edit
+    pop('detail-subject', subjects);
+    pop('detail-method', methods);
 
     // Filters (needs "All")
     const popFilter = (id, list) => {
