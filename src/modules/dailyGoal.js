@@ -136,7 +136,11 @@ export const renderDailyPlan = () => {
         return colors[index];
     };
 
-    document.getElementById('daily-plan-panel').classList.remove('hidden');
+    const activePanel = document.getElementById('tracker-active');
+    const isTimerActive = activePanel && !activePanel.classList.contains('hidden');
+    if (!isTimerActive) {
+        document.getElementById('daily-plan-panel').classList.remove('hidden');
+    }
     container.innerHTML = activeStats.map(stat => {
         const pct = stat.targetToday > 0
             ? Math.min(100, (stat.doneToday / stat.targetToday) * 100)
