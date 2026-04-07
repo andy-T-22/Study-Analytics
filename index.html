@@ -90,12 +90,22 @@
         <div id="app-container" class="flex-grow flex flex-col" style="display: none">
             <!-- HEADER -->
             <header
-                class="h-16 border-b border-theme bg-main backdrop-blur flex items-center justify-between px-6 sticky top-0 z-40">
+                class="h-16 border-b border-theme bg-main backdrop-blur flex items-center justify-between px-6 sticky top-0 z-40 relative">
                 <div class="flex items-center gap-2">
                     <img src="/timer-icon.png" alt="Logo" class="h-8 w-8 object-contain" />
                     <span class="font-bold tracking-tight text-primary">Study Meter</span>
                 </div>
+
                 <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2">
+                        <!-- Streak Legend -->
+                        <div id="streak-legend" class="hidden md:block text-xs font-bold text-orange-400 bg-orange-500/10 px-3 py-1 rounded-full border border-orange-500/20 whitespace-nowrap text-ellipsis overflow-hidden max-w-[12rem] lg:max-w-xs xl:max-w-md"></div>
+
+                        <div id="streak-counter" class="hidden flex items-center gap-1.5 px-3 py-1 rounded-full shadow-sm bg-acc-peach/20 text-orange-500 font-bold text-sm border border-orange-300 transition-all font-mono" title="Racha de estudio (días)">
+                            <i class="fas fa-fire"></i>
+                            <span id="streak-number">0</span>
+                        </div>
+                    </div>
                     <span id="user-display" class="text-xs text-secondary font-mono hidden md:block">User</span>
                     <button id="btn-logout"
                         class="text-xs bg-btn-secondary hover:bg-acc-red hover:text-primary text-primary px-3 py-1.5 rounded transition-colors">

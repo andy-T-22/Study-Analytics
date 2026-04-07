@@ -116,7 +116,91 @@ export const loadHistory = () => {
     }
 };
 
+const updateStreak = (docs) => {
+    const uniqueDays = new Set();
+    docs.forEach(s => {
+        const d = new Date(s.startTime);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        uniqueDays.add(`${year}-${month}-${day}`);
+    });
+
+    const sortedDays = Array.from(uniqueDays).sort((a, b) => b.localeCompare(a));
+    
+    let streak = 0;
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+
+    let checkDateStr = '';
+    if (sortedDays.length > 0 && sortedDays[0] === todayStr) {
+        checkDateStr = todayStr;
+    } else if (sortedDays.length > 0 && sortedDays[0] === yesterdayStr) {
+        checkDateStr = yesterdayStr;
+    }
+
+    if (checkDateStr) {
+        let currentDate = new Date(checkDateStr + 'T12:00:00');
+        for (let i = 0; i < sortedDays.length; i++) {
+            const expectedStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+            if (sortedDays[i] === expectedStr) {
+                streak++;
+                currentDate.setDate(currentDate.getDate() - 1);
+            } else {
+                break;
+            }
+        }
+    }
+
+    const streakEl = document.getElementById('streak-counter');
+    const streakNumEl = document.getElementById('streak-number');
+    const streakLegendEl = document.getElementById('streak-legend');
+    
+    if (streakEl && streakNumEl) {
+        streakNumEl.textContent = streak;
+        streakEl.classList.remove('hidden');
+        if (streak === 0) {
+            streakEl.classList.add('opacity-50', 'grayscale');
+        } else {
+            streakEl.classList.remove('opacity-50', 'grayscale');
+        }
+
+        if (streakLegendEl) {
+            const legends0 = [
+                "¡Hoy es un gran día para empezar tu racha!",
+                "Ningún día como hoy para comenzar.",
+                "Inicia tu racha de estudio ahora.",
+                "El primer paso es el más importante. ¡A estudiar!"
+            ];
+            
+            const d = streak === 1 ? "día" : "días";
+            const s = streak === 1 ? "seguido" : "seguidos";
+            const c = streak === 1 ? "consecutivo" : "consecutivos";
+            const l = streak === 1 ? "logrado" : "logrados";
+            
+            const legends = [
+                `¡Llevas ${streak} ${d} ${s}, sigue así!`,
+                `Increíble, ${streak} ${d} de puro enfoque.`,
+                `Tu racha de ${streak} ${d} es inspiradora.`,
+                `Fuego puro: ${streak} ${d} ${c}. ¡No pares!`,
+                `¡Imparable! ${streak} ${d} construyendo tu futuro.`,
+                `Estás en racha. ${streak} ${d} ${l}.`,
+                `${streak} ${d} ${s}. La constancia es la clave.`
+            ];
+            
+            const listToUse = streak === 0 ? legends0 : legends;
+            const randomLegend = listToUse[Math.floor(Math.random() * listToUse.length)];
+            streakLegendEl.textContent = randomLegend;
+        }
+    }
+};
+
 const processDataChange = (docs) => {
+    updateStreak(docs);
     docs.sort((a, b) => b.createdAt - a.createdAt);
     // Refresh UI
     applyHistoryFilters();
