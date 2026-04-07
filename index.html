@@ -250,6 +250,18 @@
                 <!-- DASHBOARD VIEW -->
                 <section id="view-dashboard" class="hidden fade-in space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="glass p-6 rounded-3xl flex flex-col justify-center items-center text-center">
+                            <h3 class="text-secondary text-xs font-bold uppercase mb-2">Total de Horas Estudiadas</h3>
+                            <div id="stat-total-hours" class="text-4xl font-black text-primary">0h 0m</div>
+                        </div>
+                        <div class="glass p-6 rounded-3xl flex flex-col justify-center items-center text-center">
+                            <h3 class="text-secondary text-xs font-bold uppercase mb-2">Materia Más Estudiada</h3>
+                            <div id="stat-top-subject" class="text-2xl font-black text-acc-peach uppercase tracking-wide break-words text-center leading-tight">--</div>
+                            <div id="stat-top-subject-time" class="text-sm font-bold text-secondary mt-1">0h 0m</div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Stat Card -->
                         <div class="glass p-6 rounded-3xl">
                             <div class="flex justify-between items-start mb-4">

@@ -42,6 +42,39 @@ export const updateCharts = () => {
 
     const efficiency = totalGross > 0 ? Math.round((totalNet / totalGross) * 100) : 0;
 
+    // Update Top Analytics
+    const hours = Math.floor(totalNet / 3600000);
+    const minutes = Math.floor((totalNet % 3600000) / 60000);
+    const totalHoursEl = document.getElementById('stat-total-hours');
+    if (totalHoursEl) {
+        totalHoursEl.textContent = `${hours}h ${minutes}m`;
+    }
+
+    let maxSubject = '--';
+    let maxSubjectTime = 0;
+    for (const sub in subjectMap) {
+        if (subjectMap[sub] > maxSubjectTime) {
+            maxSubjectTime = subjectMap[sub];
+            maxSubject = sub;
+        }
+    }
+    
+    const topSubjectEl = document.getElementById('stat-top-subject');
+    const topSubjectTimeEl = document.getElementById('stat-top-subject-time');
+    
+    if (topSubjectEl) {
+        topSubjectEl.textContent = maxSubject;
+    }
+    if (topSubjectTimeEl) {
+        if (maxSubjectTime > 0) {
+            const sh = Math.floor(maxSubjectTime / 3600000);
+            const sm = Math.floor((maxSubjectTime % 3600000) / 60000);
+            topSubjectTimeEl.textContent = `${sh}h ${sm}m`;
+        } else {
+            topSubjectTimeEl.textContent = `0h 0m`;
+        }
+    }
+
     renderEfficiencyChart(efficiency);
     renderSubjectsChart(subjectMap);
     renderInterruptionsChart(interruptionMap);
