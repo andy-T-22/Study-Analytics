@@ -1,5 +1,6 @@
 import { db } from "../services/firebaseConfig.js";
 import { collection, addDoc, query, where, onSnapshot, doc, updateDoc, increment, deleteDoc, writeBatch } from "firebase/firestore";
+import { formatHours } from "./utils.js";
 
 let currentGoals = [];
 let unsubscribe = null;
@@ -117,9 +118,6 @@ export const calculatePace = (goal) => {
         status = 'active';
     }
 
-    // Round to 1 decimal
-    pace = Math.round(pace * 10) / 10;
-
     return { pace, status };
 };
 
@@ -214,7 +212,7 @@ export const getPaceString = (goal) => {
     if (p > 24) return "¡Imposible!";
     if (p < 0.1) return "Vas sobrado";
 
-    return `${p.toFixed(1)}h / día`;
+    return `${formatHours(p)} / día`;
 };
 
 const saveLocal = () => {

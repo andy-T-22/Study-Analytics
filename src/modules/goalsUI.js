@@ -1,6 +1,6 @@
 import { createGoal, deleteGoal, getPaceString, getCurrentGoals } from "./goals.js";
 import { getSubjects } from "./data.js"; // To populate subject dropdown in modal
-import { showAlert, showConfirm } from "./utils.js";
+import { showAlert, showConfirm, formatHours } from "./utils.js";
 import { getCurrentUser } from "./auth.js";
 
 export const renderGoals = (goals) => {
@@ -71,7 +71,7 @@ export const renderGoals = (goals) => {
                     </div>
 
                     <div class="mb-2 flex justify-between items-end text-xs font-mono font-bold text-primary">
-                        <span>${(g.accumulatedHours || 0).toFixed(1)}h / ${g.targetHours}h</span>
+                        <span>${formatHours(g.accumulatedHours || 0)} / ${formatHours(g.targetHours)}</span>
                         <span>${percent}%</span>
                     </div>
                     

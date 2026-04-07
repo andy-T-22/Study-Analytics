@@ -1,5 +1,15 @@
 import { toast } from "./toasts.js";
 
+export const formatHours = (decimalHours) => {
+    if (decimalHours == null || isNaN(decimalHours)) return "0h 00m";
+    const h = Math.floor(decimalHours);
+    const m = Math.round((decimalHours - h) * 60);
+    if (m === 60) {
+        return `${h + 1}h 00m`;
+    }
+    return `${h}h ${m.toString().padStart(2, '0')}m`;
+};
+
 export const formatTime = (ms, showSeconds = true) => {
     const totalSecs = Math.floor(ms / 1000);
     const h = Math.floor(totalSecs / 3600);

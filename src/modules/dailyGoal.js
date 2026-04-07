@@ -1,4 +1,5 @@
-import { getCurrentGoals } from "./goals.js";
+import { getCurrentGoals, calculatePace } from "./goals.js";
+import { formatHours } from "./utils.js";
 
 // --- LOGIC ---
 
@@ -67,24 +68,18 @@ export const calculateDailyGoalStats = (goal, sessions) => {
     // This value is constant for the day (unless TotalTarget changes).
 
     const examDate = new Date(goal.examDate);
-    // Set exam date to end of day to be inclusive? Or start of day?
-    // Let's assume start of day for comparison.
     examDate.setHours(0, 0, 0, 0);
     const todayZero = new Date();
     todayZero.setHours(0, 0, 0, 0);
 
     const diffTime = examDate - todayZero;
-    // If diffTime < 0, it is in the past.
     const isExpired = diffTime < 0;
 
-    let daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (daysLeft < 1) daysLeft = 1;
-
-    // We add doneToday back to remaining to get the "Morning State" remaining.
-    const remainingAtStartOfDay = remainingTotal + doneTodayHours;
-
-    let targetToday = remainingAtStartOfDay / daysLeft;
+    let targetToday = goal.dailyPace;
+    if (targetToday === undefined || targetToday === null) {
+        const stats = calculatePace(goal);
+        targetToday = stats.pace;
+    }
 
     // Edge case: If I already finished the TOTAL goal, target is 0.
     if (totalDone >= totalTarget) targetToday = 0;
@@ -180,12 +175,7 @@ export const renderDailyPlan = () => {
     }).join('');
 };
 
-// Helper for "1h 30m" format
-const formatHours = (decimalHours) => {
-    const h = Math.floor(decimalHours);
-    const m = Math.round((decimalHours - h) * 60);
-    return `${h}h ${m.toString().padStart(2, '0')}m`;
-};
+
 
 export const initDailyGoalPanel = () => {
     renderDailyPlan();
