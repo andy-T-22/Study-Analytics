@@ -48,3 +48,73 @@ export const showConfirm = (title, msg, onConfirm) => {
 
     overlay.classList.add('open');
 };
+
+export const evaluateStreak = (current_time, user_timezone, current_state) => {
+    const now = new Date(current_time);
+    const { streak, last_date, freezes } = current_state;
+
+    let timeZoneToUse = user_timezone;
+    if (!timeZoneToUse) {
+        timeZoneToUse = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    }
+
+    let todayStr;
+    try {
+        const formatter = new Intl.DateTimeFormat('en-CA', { 
+            timeZone: timeZoneToUse,
+            year: 'numeric', month: '2-digit', day: '2-digit' 
+        });
+        todayStr = formatter.format(now);
+    } catch (e) {
+        // Fallback if timezone is invalid
+        todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    }
+    
+    let new_streak = streak || 0;
+    let new_freeze_count = freezes || 0;
+    let status = "maintained";
+    let message = "";
+
+    if (!last_date) {
+        new_streak = 1;
+        status = "continued";
+        message = "¡Primer día de actividad! Comienza tu racha.";
+    } else {
+        const todayDate = new Date(todayStr + "T00:00:00");
+        const lastDateObj = new Date(last_date + "T00:00:00");
+        const diffTime = todayDate - lastDateObj;
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 1) {
+            new_streak += 1;
+            status = "continued";
+            message = "¡Un día más! Sigue así.";
+        } else if (diffDays === 0) {
+            status = "maintained";
+            message = "Esfuerzo extra hoy, ¡bien hecho!";
+        } else if (diffDays > 1 && new_freeze_count > 0) {
+            new_freeze_count -= 1;
+            status = "frozen";
+            message = "Día salvado por tu protector de racha.";
+        } else if (diffDays > 1 && new_freeze_count === 0) {
+            new_streak = 1;
+            status = "lost";
+            message = "Racha perdida. ¡A empezar de nuevo con fuerza!";
+        } else if (diffDays < 0) {
+             // In case of time travel / testing
+             status = "maintained";
+             message = "Actividad registrada correctamente.";
+        }
+    }
+
+    const mod = new_streak % 5;
+    const days_to_next = mod === 0 ? 5 : 5 - mod;
+
+    return {
+        new_streak,
+        new_freeze_count,
+        status,
+        message,
+        next_milestone: `${days_to_next} días`
+    };
+};

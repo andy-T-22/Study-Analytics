@@ -237,7 +237,10 @@ export const openSessionDetails = async (id) => {
 
     // Setup Edit Fields
     const d = new Date(session.startTime);
-    document.getElementById('detail-date-edit').value = d.toISOString().split('T')[0];
+    const localYear = d.getFullYear();
+    const localMonth = String(d.getMonth() + 1).padStart(2, '0');
+    const localDay = String(d.getDate()).padStart(2, '0');
+    document.getElementById('detail-date-edit').value = `${localYear}-${localMonth}-${localDay}`;
     document.getElementById('detail-start-edit').value = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
     document.getElementById('detail-end-edit').value = new Date(session.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
     document.getElementById('detail-net-edit').value = Math.floor((session.netDuration || 0) / 60000);
@@ -526,7 +529,11 @@ const openManualEntry = () => {
     // It's usually ready.
 
     // Clear fields
-    document.getElementById('man-date').valueAsDate = new Date();
+    const now = new Date();
+    const localYear = now.getFullYear();
+    const localMonth = String(now.getMonth() + 1).padStart(2, '0');
+    const localDay = String(now.getDate()).padStart(2, '0');
+    document.getElementById('man-date').value = `${localYear}-${localMonth}-${localDay}`;
     document.getElementById('man-start').value = "";
     document.getElementById('man-end').value = "";
     document.getElementById('man-duration').value = "";
