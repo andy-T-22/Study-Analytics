@@ -28,7 +28,6 @@ export const initAuth = () => {
     // Setup UI Toggle State
     let isLoginMode = true;
     const authTitle = document.getElementById('auth-title');
-    const authSubtitle = document.getElementById('auth-subtitle');
     const btnAuthMain = document.getElementById('btn-auth-main');
     const authToggleText = document.getElementById('auth-toggle-text');
     const btnToggleAuth = document.getElementById('btn-toggle-auth');
@@ -60,7 +59,6 @@ export const initAuth = () => {
         authVerificationPanel.classList.remove('hidden');
         authVerificationPanel.classList.add('flex');
         authTitle.textContent = "Verificación Pendiente";
-        authSubtitle.textContent = "Casi listo para empezar.";
         if (btnAuthBack) btnAuthBack.classList.add('hidden');
     };
 
@@ -70,15 +68,13 @@ export const initAuth = () => {
             showMainForm();
             if (isLoginMode) {
                 authTitle.textContent = "Study Meter";
-                authSubtitle.textContent = "Estudio consciente y sereno.";
-                btnAuthMain.textContent = "Entrar";
+                btnAuthMain.textContent = "Iniciar Sesión";
                 authToggleText.textContent = "¿No tienes cuenta?";
                 btnToggleAuth.textContent = "Registrar";
                 passConfirmWrapper.classList.add('hidden');
                 document.getElementById('auth-msg').classList.add('hidden');
             } else {
                 authTitle.textContent = "Crear Cuenta";
-                authSubtitle.textContent = "Únete para organizar tus metas.";
                 btnAuthMain.textContent = "Registrarse";
                 authToggleText.textContent = "¿Ya tienes cuenta?";
                 btnToggleAuth.textContent = "Ingresar";
@@ -116,11 +112,24 @@ export const initAuth = () => {
     // Forgot Password Logic
     if (btnForgotPass) {
         btnForgotPass.addEventListener('click', async () => {
-            const email = document.getElementById('auth-email').value.trim();
+            const emailInput = document.getElementById('auth-email');
+            const email = emailInput.value.trim();
             if (!email) {
-                import('./utils.js').then(({showAlert}) => {
-                    showAlert("Por favor, ingresa tu correo electrónico para recuperar tu contraseña.", "error");
-                });
+                // Highlight email input visually
+                emailInput.classList.remove('border-theme', 'focus:border-[#a5ccf5]');
+                emailInput.classList.add('border-acc-red-dark', 'focus:border-acc-red-dark', 'animate-shake');
+                
+                showAuthError("Este campo es obligatorio para recuperar tu contraseña.");
+                
+                // Remove highlight when typing
+                const removeError = () => {
+                    emailInput.classList.remove('border-acc-red-dark', 'focus:border-acc-red-dark', 'animate-shake');
+                    emailInput.classList.add('border-theme', 'focus:border-[#a5ccf5]');
+                    document.getElementById('auth-msg').classList.add('hidden');
+                    emailInput.removeEventListener('input', removeError);
+                };
+                emailInput.addEventListener('input', removeError);
+                
                 return;
             }
             
@@ -129,10 +138,26 @@ export const initAuth = () => {
 
             try {
                 await sendPasswordResetEmail(auth, email);
-                import('./utils.js').then(({showAlert}) => {
-                    showAlert(`Correo de recuperación enviado a ${email}. Revisa tu bandeja de entrada o SPAM.`, "success");
-                });
+                
                 document.getElementById('auth-msg').classList.add('hidden');
+                
+                // Show Custom Modal
+                const resetModal = document.getElementById('reset-success-modal');
+                if (resetModal) {
+                    resetModal.classList.remove('hidden');
+                    resetModal.classList.add('flex');
+                    
+                    const closeModal = () => {
+                        resetModal.classList.add('hidden');
+                        resetModal.classList.remove('flex');
+                    };
+                    
+                    const btnClose = document.getElementById('btn-close-reset-modal');
+                    const btnOk = document.getElementById('btn-ok-reset-modal');
+                    
+                    if (btnClose) btnClose.onclick = closeModal;
+                    if (btnOk) btnOk.onclick = closeModal;
+                }
             } catch (e) {
                 handleAuthError(e.code);
             }

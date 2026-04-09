@@ -54,12 +54,12 @@
                 <button id="btn-auth-back" class="hidden absolute top-8 left-6 text-secondary hover:text-primary transition-colors focus:outline-none" title="Volver a Inicio de Sesión">
                     <i class="fas fa-arrow-left text-lg"></i>
                 </button>
-                <h1 id="auth-title" class="text-3xl font-extrabold text-primary mb-2 text-center tracking-tight mt-2">
+                <div class="flex justify-center mb-4">
+                    <img src="/timer-icon.png" alt="Study Meter Logo" class="w-16 h-16 object-contain" />
+                </div>
+                <h1 id="auth-title" class="text-3xl font-extrabold text-primary mb-6 text-center tracking-tight mt-2">
                     Study Meter
                 </h1>
-                <p id="auth-subtitle" class="text-secondary text-center mb-6 text-sm">
-                    Estudio consciente y sereno.
-                </p>
 
                 <div id="auth-msg"
                     class="hidden mb-4 p-2 text-center text-xs rounded bg-red-100 text-red-600 border border-red-200">
@@ -77,8 +77,8 @@
                         </button>
                     </div>
                     
-                    <div class="text-right mt-1">
-                        <button id="btn-forgot-pass" type="button" class="text-xs text-secondary hover:text-primary transition-colors focus:outline-none">
+                    <div class="text-left mt-1">
+                        <button id="btn-forgot-pass" type="button" class="text-sm font-medium text-acc-blue hover:text-acc-blue-dark hover:underline transition-colors focus:outline-none">
                             ¿Olvidaste tu contraseña?
                         </button>
                     </div>
@@ -95,10 +95,10 @@
                         <button id="btn-auth-main"
                             class="w-full bg-acc-blue hover:brightness-90 text-primary font-bold py-3 rounded-lg transition-colors shadow-sm"
                             type="button">
-                            Entrar
+                            Iniciar Sesión
                         </button>
                         
-                        <div class="text-center text-sm text-secondary">
+                        <div class="text-left text-sm text-secondary">
                             <span id="auth-toggle-text">¿No tienes cuenta?</span>
                             <button id="btn-toggle-auth" class="text-acc-blue-dark font-bold hover:underline transition-colors focus:outline-none" type="button">
                                 Registrar
@@ -155,6 +155,30 @@
                         Usar otra cuenta
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <!-- PASSWORD RESET SUCCESS MODAL -->
+        <div id="reset-success-modal" class="fixed inset-0 z-[100] bg-black/40 hidden items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+            <div class="w-full max-w-sm bg-card rounded-2xl shadow-xl border border-theme relative flex flex-col p-6 animate-fade-in-up">
+                <button type="button" id="btn-close-reset-modal" class="absolute top-4 right-4 text-secondary hover:text-primary transition-colors focus:outline-none">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+                
+                <h2 class="text-lg font-bold text-primary mb-3 pr-6 leading-tight mt-1">
+                    Revisa tu correo para recuperar tu cuenta.
+                </h2>
+                
+                <p class="text-secondary text-sm mb-6 leading-relaxed">
+                    Te hemos enviado un enlace seguro. Ábrelo en tu correo para crear una nueva contraseña y volver a ingresar.
+                </p>
+                
+                <button type="button" id="btn-ok-reset-modal" class="w-full bg-acc-blue hover:brightness-90 text-primary font-bold py-3 px-4 rounded-lg transition-colors shadow-sm text-sm">
+                    Entendido
+                </button>
             </div>
         </div>
 

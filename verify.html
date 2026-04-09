@@ -57,10 +57,16 @@
             
             <form id="form-reset" class="w-full space-y-4">
                 <div class="relative">
-                    <input type="password" id="reset-pass" placeholder="Nueva Contraseña" required class="w-full rounded-lg p-3 outline-none border border-theme transition-colors focus:border-[#a5ccf5] bg-card text-primary" />
+                    <input type="password" id="reset-pass" placeholder="Nueva Contraseña" required class="w-full rounded-lg p-3 pr-10 outline-none border border-theme transition-colors focus:border-[#a5ccf5] bg-card text-primary" />
+                    <button type="button" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-secondary hover:text-primary transition-colors toggle-pwd" data-target="reset-pass">
+                        <i class="fas fa-eye"></i>
+                    </button>
                 </div>
                 <div class="relative">
-                    <input type="password" id="reset-pass-confirm" placeholder="Confirmar nueva contraseña" required class="w-full rounded-lg p-3 outline-none border border-theme transition-colors focus:border-[#a5ccf5] bg-card text-primary" />
+                    <input type="password" id="reset-pass-confirm" placeholder="Confirmar nueva contraseña" required class="w-full rounded-lg p-3 pr-10 outline-none border border-theme transition-colors focus:border-[#a5ccf5] bg-card text-primary" />
+                    <button type="button" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-secondary hover:text-primary transition-colors toggle-pwd" data-target="reset-pass-confirm">
+                        <i class="fas fa-eye"></i>
+                    </button>
                 </div>
                 
                 <p id="reset-error" class="text-xs text-acc-red-dark hidden text-center mt-1"></p>

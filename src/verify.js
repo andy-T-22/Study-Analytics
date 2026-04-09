@@ -68,6 +68,25 @@ document.addEventListener('DOMContentLoaded', async () => {
             const errorDisplay = document.getElementById('reset-error');
             const btnSubmit = document.getElementById('btn-reset-submit');
 
+            // Set up password visibility toggles
+            document.querySelectorAll('.toggle-pwd').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetId = btn.getAttribute('data-target');
+                    const targetInput = document.getElementById(targetId);
+                    const icon = btn.querySelector('i');
+                    
+                    if (targetInput.type === 'password') {
+                        targetInput.type = 'text';
+                        icon.classList.remove('fa-eye');
+                        icon.classList.add('fa-eye-slash');
+                    } else {
+                        targetInput.type = 'password';
+                        icon.classList.remove('fa-eye-slash');
+                        icon.classList.add('fa-eye');
+                    }
+                });
+            });
+
             formReset.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 errorDisplay.classList.add('hidden');
