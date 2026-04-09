@@ -4,7 +4,7 @@ import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
     apiKey: "AIzaSyDDTOTQDYxbpRT547Cf0-hO014pl3T3JUo",
-    authDomain: "mi-planner-88ef4.firebaseapp.com",
+    authDomain: "studymeter.app",
     projectId: "mi-planner-88ef4",
     storageBucket: "mi-planner-88ef4.firebasestorage.app",
     messagingSenderId: "252241778516",
