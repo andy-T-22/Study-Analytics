@@ -47,6 +47,30 @@
             </a>
         </div>
 
+        <!-- RESET PASSWORD STATE -->
+        <div id="state-reset" class="hidden flex-col items-center justify-center py-6 w-full">
+            <div class="w-16 h-16 text-acc-blue-dark rounded-full flex items-center justify-center text-3xl mb-2">
+                <i class="fas fa-lock text-3xl"></i>
+            </div>
+            <h2 class="text-xl font-bold text-primary mb-2 text-center">Restablecer Contraseña</h2>
+            <p class="text-secondary text-sm mb-6 text-center">Ingresa tu nueva contraseña para acceder a tu cuenta.</p>
+            
+            <form id="form-reset" class="w-full space-y-4">
+                <div class="relative">
+                    <input type="password" id="reset-pass" placeholder="Nueva Contraseña" required class="w-full rounded-lg p-3 outline-none border border-theme transition-colors focus:border-[#a5ccf5] bg-card text-primary" />
+                </div>
+                <div class="relative">
+                    <input type="password" id="reset-pass-confirm" placeholder="Confirmar nueva contraseña" required class="w-full rounded-lg p-3 outline-none border border-theme transition-colors focus:border-[#a5ccf5] bg-card text-primary" />
+                </div>
+                
+                <p id="reset-error" class="text-xs text-acc-red-dark hidden text-center mt-1"></p>
+
+                <button type="submit" id="btn-reset-submit" class="w-full bg-acc-blue hover:brightness-95 text-primary font-bold py-3 rounded-lg transition-colors mt-6 shadow-sm flex items-center justify-center gap-2">
+                    Actualizar Contraseña
+                </button>
+            </form>
+        </div>
+
         <!-- ERROR STATE -->
         <div id="state-error" class="hidden flex-col items-center justify-center py-6 text-center">
             <div class="w-16 h-16 text-acc-red-dark rounded-full flex items-center justify-center text-3xl mb-2">
