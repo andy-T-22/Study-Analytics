@@ -18,45 +18,45 @@
     </style>
 </head>
 
-<body class="min-h-screen flex flex-col items-center justify-center bg-[#fcfbf7] transition-colors duration-300" data-theme="pastel">
+<body class="bg-main min-h-screen flex flex-col items-center justify-center transition-colors duration-300" data-theme="pastel">
     <div class="fixed inset-0 z-0 opacity-40 pointer-events-none" id="bg-pattern" style="background-image: radial-gradient(circle at 2px 2px, rgba(0, 0, 0, 0.05) 1px, transparent 0); background-size: 24px 24px;"></div>
     
-    <div class="w-full max-w-md bg-white p-10 rounded-[2rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-gray-100 relative z-10 fade-in">
+    <div class="w-full max-w-md bg-card p-10 rounded-[2rem] shadow-xl border border-theme relative z-10 fade-in">
         <div class="text-center mb-8">
             <img src="/timer-icon.png" alt="Study Meter Logo" class="w-16 h-16 mx-auto mb-4 drop-shadow-sm">
-            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Study Meter</h1>
+            <h1 class="text-3xl font-extrabold text-primary tracking-tight">Study Meter</h1>
         </div>
 
         <!-- LOADER STATE -->
         <div id="state-loading" class="flex flex-col items-center justify-center py-6">
-            <i class="fas fa-circle-notch fa-spin text-4xl text-blue-500 mb-4 h-10"></i>
-            <p class="text-gray-600 font-medium">Verificando tu cuenta...</p>
+            <i class="fas fa-circle-notch fa-spin text-4xl text-acc-blue-dark mb-4 h-10"></i>
+            <p class="text-secondary font-medium">Verificando tu cuenta...</p>
         </div>
 
         <!-- SUCCESS STATE -->
         <div id="state-success" class="hidden flex-col items-center justify-center py-6 text-center">
-            <div class="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center text-3xl mb-4 shadow-inner">
+            <div class="w-16 h-16 text-acc-green-dark rounded-full flex items-center justify-center text-3xl mb-2">
                 <i class="fas fa-check"></i>
             </div>
-            <h2 class="text-xl font-bold text-gray-900 mb-2">¡Cuenta Verificada!</h2>
-            <p class="text-gray-500 text-sm mb-8 leading-relaxed">
+            <h2 class="text-xl font-bold text-primary mb-2">¡Cuenta Verificada!</h2>
+            <p class="text-secondary text-sm mb-8 leading-relaxed">
                 Tu correo electrónico ha sido confirmado exitosamente. Ya puedes empezar a organizar tus metas.
             </p>
-            <a href="/index.html" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-xl transition-all hover:scale-105 shadow-md flex items-center justify-center gap-2">
+            <a href="/index.html" class="w-full bg-acc-blue hover:brightness-95 text-primary font-bold py-3 px-6 rounded-xl transition-all hover:scale-105 shadow-sm flex items-center justify-center gap-2">
                 Ingresar a Study Meter <i class="fas fa-arrow-right"></i>
             </a>
         </div>
 
         <!-- ERROR STATE -->
         <div id="state-error" class="hidden flex-col items-center justify-center py-6 text-center">
-            <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center text-3xl mb-4 shadow-inner">
+            <div class="w-16 h-16 text-acc-red-dark rounded-full flex items-center justify-center text-3xl mb-2">
                 <i class="fas fa-times"></i>
             </div>
-            <h2 class="text-xl font-bold text-gray-900 mb-2">Enlace Inválido</h2>
-            <p id="error-msg" class="text-gray-500 text-sm mb-8 leading-relaxed">
+            <h2 class="text-xl font-bold text-primary mb-2">Enlace Inválido</h2>
+            <p id="error-msg" class="text-secondary text-sm mb-8 leading-relaxed">
                 El enlace de verificación expiró o ya fue utilizado.
             </p>
-            <a href="/index.html" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2">
+            <a href="/index.html" class="w-full bg-btn-secondary hover:bg-btn-secondary-hover text-primary font-bold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2">
                 Volver al Inicio
             </a>
         </div>
