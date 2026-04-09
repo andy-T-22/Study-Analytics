@@ -349,7 +349,8 @@ const setAppUser = (user) => {
 };
 
 const handleAuthError = (code) => {
-    let msg = "Ocurrió un error inesperado.";
+    console.error("Auth Error Code:", code);
+    let msg = "Ocurrió un error inesperado. (" + code + ")";
     
     switch (code) {
         case 'auth/invalid-email':
@@ -368,6 +369,9 @@ const handleAuthError = (code) => {
             break;
         case 'auth/too-many-requests':
             msg = "Demasiados intentos fallidos. Inténtalo más tarde.";
+            break;
+        case 'auth/account-exists-with-different-credential':
+            msg = "Ya existe una cuenta. Entra usando tu correo y contraseña original.";
             break;
     }
     
