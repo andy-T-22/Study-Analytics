@@ -50,11 +50,14 @@
     <div id="app">
         <!-- AUTH OVERLAY -->
         <div id="auth-overlay" class="fixed inset-0 z-50 bg-main flex items-center justify-center p-4">
-            <div class="w-full max-w-md bg-card p-8 rounded-2xl shadow-xl border border-theme">
-                <h1 class="text-3xl font-extrabold text-primary mb-2 text-center tracking-tight">
+            <div class="w-full max-w-md bg-card p-8 rounded-2xl shadow-xl border border-theme relative">
+                <button id="btn-auth-back" class="hidden absolute top-8 left-6 text-secondary hover:text-primary transition-colors focus:outline-none" title="Volver a Inicio de Sesión">
+                    <i class="fas fa-arrow-left text-lg"></i>
+                </button>
+                <h1 id="auth-title" class="text-3xl font-extrabold text-primary mb-2 text-center tracking-tight mt-2">
                     Study Meter
                 </h1>
-                <p class="text-secondary text-center mb-6 text-sm">
+                <p id="auth-subtitle" class="text-secondary text-center mb-6 text-sm">
                     Estudio consciente y sereno.
                 </p>
 
@@ -62,25 +65,72 @@
                     class="hidden mb-4 p-2 text-center text-xs rounded bg-red-100 text-red-600 border border-red-200">
                 </div>
 
-                <div class="space-y-4">
+                <div id="auth-main-form" class="space-y-4 transition-opacity duration-300">
                     <input type="email" id="auth-email" placeholder="Correo"
                         class="w-full rounded-lg p-3 outline-none border border-theme transition-colors focus:border-[#a5ccf5]" />
-                    <input type="password" id="auth-pass" placeholder="Contraseña"
-                        class="w-full rounded-lg p-3 outline-none border border-theme transition-colors focus:border-[#a5ccf5]" />
-                    <div class="flex gap-2">
-                        <button id="btn-login"
-                            class="flex-1 bg-acc-blue hover:brightness-90 text-primary font-bold py-3 rounded-lg transition-colors"
+                    
+                    <div class="relative">
+                        <input type="password" id="auth-pass" placeholder="Contraseña"
+                            class="w-full rounded-lg p-3 outline-none border border-theme transition-colors focus:border-[#a5ccf5] pr-10" />
+                        <button type="button" id="btn-toggle-pass" tabindex="-1" class="absolute inset-y-0 right-0 px-3 flex items-center text-secondary hover:text-primary transition-colors">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+
+                    <div id="auth-pass-confirm-wrapper" class="relative hidden">
+                        <input type="password" id="auth-pass-confirm" placeholder="Confirmar Contraseña"
+                            class="w-full rounded-lg p-3 outline-none border border-theme transition-colors focus:border-[#a5ccf5] pr-10" />
+                        <button type="button" id="btn-toggle-pass-confirm" tabindex="-1" class="absolute inset-y-0 right-0 px-3 flex items-center text-secondary hover:text-primary transition-colors">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+
+                    <div class="flex flex-col gap-3 mt-4">
+                        <button id="btn-auth-main"
+                            class="w-full bg-acc-blue hover:brightness-90 text-primary font-bold py-3 rounded-lg transition-colors shadow-sm"
                             type="button">
                             Entrar
                         </button>
-                        <button id="btn-register"
-                            class="flex-1 bg-btn-secondary text-primary font-bold py-3 rounded-lg transition-colors"
-                            type="button">
-                            Registro
+                        
+                        <div class="text-center text-sm text-secondary">
+                            <span id="auth-toggle-text">¿No tienes cuenta?</span>
+                            <button id="btn-toggle-auth" class="text-acc-blue-dark font-bold hover:underline transition-colors focus:outline-none" type="button">
+                                Registrar
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="h-px bg-theme w-full my-4"></div>
+                    
+                    <button id="btn-guest" class="w-full text-xs text-secondary font-medium hover:text-primary py-2 transition-colors" type="button">
+                        Continuar como Invitado
+                    </button>
+                </div>
+
+                <!-- VERIFICATION PANEL -->
+                <div id="auth-verification-panel" class="hidden flex-col items-center space-y-5 transition-opacity duration-300">
+                    <div class="bg-blue-50/50 border border-blue-100 rounded-xl p-4 w-full">
+                        <div class="flex items-center gap-3 mb-2 text-acc-blue-dark">
+                            <i class="fas fa-envelope-open-text text-xl"></i>
+                            <h3 class="font-bold text-sm uppercase tracking-wide">Revisa tu correo</h3>
+                        </div>
+                        <p class="text-sm text-secondary text-left leading-relaxed">
+                            Hemos enviado un enlace de confirmación a tu dirección de correo electrónico.<br>
+                            Debes validar tu cuenta para poder ingresar.
+                        </p>
+                    </div>
+
+                    <div class="w-full space-y-2">
+                        <button id="btn-verify-check" class="w-full bg-acc-blue hover:brightness-90 text-primary font-bold py-3 rounded-lg transition-colors shadow-sm text-sm">
+                            <i class="fas fa-sync-alt mr-2"></i> Ya lo verifiqué (Entrar)
+                        </button>
+                        <button id="btn-resend-verification" class="w-full bg-card border border-theme hover:bg-main text-primary font-bold py-3 rounded-lg transition-colors shadow-sm text-sm">
+                            <i class="fas fa-paper-plane mr-2"></i> Reenviar Correo
                         </button>
                     </div>
-                    <button id="btn-guest" class="w-full text-xs text-secondary hover:text-primary py-2" type="button">
-                        Continuar como Invitado
+
+                    <button id="btn-verify-logout" class="text-xs text-secondary hover:text-primary mt-2 font-medium transition-colors">
+                        Usar otra cuenta
                     </button>
                 </div>
             </div>
@@ -494,6 +544,20 @@
                         title="Café"></button>
                 </div>
             </div>
+            
+            <hr class="border-theme my-6">
+
+            <!-- Danger Zone -->
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <span class="text-acc-red font-bold block">Zona de Peligro</span>
+                    <span class="text-xs text-secondary">Eliminar permanentemente tu cuenta y todos tus datos.</span>
+                </div>
+                <button id="btn-delete-account" class="bg-acc-red/10 border border-acc-red hover:bg-acc-red text-acc-red hover:text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm whitespace-nowrap">
+                    Eliminar Cuenta
+                </button>
+            </div>
+
             <div class="flex justify-end">
                 <button id="btn-close-settings"
                     class="bg-btn-secondary hover:bg-btn-secondary-hover text-primary px-4 py-2 rounded-lg font-bold transition-colors">Cerrar</button>
