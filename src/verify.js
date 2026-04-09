@@ -1,8 +1,12 @@
-import './style.css'; // Importing global tailwind styles
+import './style.css';
 import { auth } from './services/firebaseConfig.js';
 import { applyActionCode } from 'firebase/auth';
+import { faviconAnimator } from './modules/favicon.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Ensure the exact same favicon logic runs, but we keep it stopped (static)
+    faviconAnimator.stop();
+    
     // UI Elements
     const stateLoading = document.getElementById('state-loading');
     const stateSuccess = document.getElementById('state-success');
