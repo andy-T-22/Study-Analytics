@@ -1,5 +1,5 @@
 import { auth, db } from "../services/firebaseConfig.js";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendEmailVerification, deleteUser } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendEmailVerification, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, deleteUser } from "firebase/auth";
 import { doc, deleteDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { initData, loadHistory } from "./data.js";
 
@@ -36,6 +36,15 @@ export const initAuth = () => {
     const authMainForm = document.getElementById('auth-main-form');
     const authVerificationPanel = document.getElementById('auth-verification-panel');
     const btnAuthBack = document.getElementById('btn-auth-back');
+    const btnForgotPass = document.getElementById('btn-forgot-pass');
+    
+    // Auth mode state indicator overrides
+    const updateVisibility = () => {
+        if (btnForgotPass) {
+            // Hide forgot password button if we are registering
+            btnForgotPass.parentElement.classList.toggle('hidden', !isLoginMode);
+        }
+    };
 
     const showMainForm = () => {
         authMainForm.classList.remove('hidden');
@@ -76,6 +85,7 @@ export const initAuth = () => {
                 passConfirmWrapper.classList.remove('hidden');
                 document.getElementById('auth-msg').classList.add('hidden');
             }
+            updateVisibility();
         });
     }
 
@@ -83,6 +93,48 @@ export const initAuth = () => {
         btnAuthBack.addEventListener('click', () => {
             if (!isLoginMode && btnToggleAuth) {
                 btnToggleAuth.click(); // Re-use toggle logic
+            }
+        });
+    }
+
+    // Google Auth Logic
+    const btnGoogleAuth = document.getElementById('btn-google-auth');
+    if (btnGoogleAuth) {
+        btnGoogleAuth.addEventListener('click', async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                // signInWithPopup usually auto-verifies email because it traces back to Google
+                await signInWithPopup(auth, provider);
+            } catch (e) {
+                if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
+                    handleAuthError(e.code);
+                }
+            }
+        });
+    }
+
+    // Forgot Password Logic
+    if (btnForgotPass) {
+        btnForgotPass.addEventListener('click', async () => {
+            const email = document.getElementById('auth-email').value.trim();
+            if (!email) {
+                import('./utils.js').then(({showAlert}) => {
+                    showAlert("Por favor, ingresa tu correo electrónico para recuperar tu contraseña.", "error");
+                });
+                return;
+            }
+            
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) return showAuthError("El formato del correo no es válido.");
+
+            try {
+                await sendPasswordResetEmail(auth, email);
+                import('./utils.js').then(({showAlert}) => {
+                    showAlert(`Correo de recuperación enviado a ${email}. Revisa tu bandeja de entrada o SPAM.`, "success");
+                });
+                document.getElementById('auth-msg').classList.add('hidden');
+            } catch (e) {
+                handleAuthError(e.code);
             }
         });
     }
