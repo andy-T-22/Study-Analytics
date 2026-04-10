@@ -2,6 +2,13 @@
 <html lang="es">
 
 <head>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-T56H2SL7');</script>
+    <!-- End Google Tag Manager -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/png" href="/favicon-custom.png" />
@@ -40,6 +47,10 @@
 </head>
 
 <body class="min-h-screen flex flex-col transition-colors duration-300">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-T56H2SL7"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
     <!-- SPLASH SCREEN -->
     <div id="splash-screen">
         <img src="/timer-icon.png" alt="Logo" id="splash-logo" />
@@ -50,7 +61,7 @@
     <div id="app">
         <!-- AUTH OVERLAY -->
         <div id="auth-overlay" class="fixed inset-0 z-50 bg-main flex items-center justify-center p-4">
-            <div class="w-full max-w-md bg-card p-8 rounded-2xl shadow-xl border border-theme relative">
+            <div class="w-full max-w-[480px] bg-card p-8 md:p-10 rounded-2xl shadow-xl border border-theme relative">
                 <button id="btn-auth-back" class="hidden absolute top-8 left-6 text-secondary hover:text-primary transition-colors focus:outline-none" title="Volver a Inicio de Sesión">
                     <i class="fas fa-arrow-left text-lg"></i>
                 </button>
@@ -122,11 +133,12 @@
                         Google
                     </button>
                     
-                    <div class="h-px bg-theme w-full my-4"></div>
-                    
-                    <button id="btn-guest" class="w-full text-xs text-secondary font-medium hover:text-primary py-2 transition-colors" type="button">
-                        Continuar como Invitado
-                    </button>
+                    <div class="flex flex-col space-y-0" style="margin-top: 12px;">
+                        <div class="h-px bg-theme w-full mb-1"></div>
+                        <button id="btn-guest" class="w-full text-xs text-secondary font-medium hover:text-acc-blue hover:underline py-0 transition-colors focus:outline-none" type="button">
+                            Continuar como Invitado
+                        </button>
+                    </div>
                 </div>
 
                 <!-- VERIFICATION PANEL -->
