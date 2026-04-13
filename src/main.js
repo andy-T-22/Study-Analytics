@@ -787,3 +787,12 @@ function setupManualSmartLogic() {
         }
     };
 }
+
+// --- PWA SERVICE WORKER REGISTRATION ---
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(err => {
+      console.warn('ServiceWorker registration failed: ', err);
+    });
+  });
+}
