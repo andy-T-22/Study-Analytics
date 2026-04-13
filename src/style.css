@@ -617,9 +617,3 @@ input::placeholder {
     scrollbar-width: none; /* Firefox */
 }
 
-/* HIDE INSTALL BUTTON IN STANDALONE (PWA) MODE */
-@media all and (display-mode: standalone) {
-    #btn-install-pwa {
-        display: none !important;
-    }
-}
