@@ -12,6 +12,9 @@
         href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap"
         rel="stylesheet" />
     <meta name="theme-color" content="#fcfbf7" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Study Meter" />
     <meta name="description" content="Study Meter - Estudio consciente y sereno." />
 
     <!-- Google tag (gtag.js) -->
@@ -205,8 +208,14 @@
                     <span class="font-bold tracking-tight text-primary truncate max-w-[120px] sm:max-w-none text-sm md:text-base">Study Meter</span>
                 </div>
 
-                <div class="flex items-center gap-4">
-                    <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 md:gap-4 overflow-hidden">
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <!-- Install Button (Hidden by default, shown via JS) -->
+                        <button id="btn-install-pwa" class="hidden items-center gap-1.5 px-3 py-1 rounded-full shadow-sm bg-acc-blue/20 text-acc-blue-dark font-bold text-xs border border-acc-blue transition-all hover:scale-105" title="Instalar Aplicación">
+                            <i class="fas fa-download"></i>
+                            <span class="hidden sm:inline">App</span>
+                        </button>
+
                         <!-- Streak Legend -->
                         <div id="streak-legend" class="hidden md:block text-xs font-bold text-orange-400 bg-orange-500/10 px-3 py-1 rounded-full border border-orange-500/20 whitespace-nowrap text-ellipsis overflow-hidden max-w-[12rem] lg:max-w-xs xl:max-w-md"></div>
 
