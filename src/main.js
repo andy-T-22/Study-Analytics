@@ -65,44 +65,6 @@ const initPWAInstall = () => {
     }
 };
 
-// --- PWA INSTALLATION ---
-const initPWAInstall = () => {
-    let deferredPrompt;
-    const btnInstall = document.getElementById('btn-install-app');
-    if (!btnInstall) return;
-
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        if (window.innerWidth < 768) {
-            btnInstall.classList.remove('hidden');
-            btnInstall.classList.add('flex');
-        }
-    });
-
-    btnInstall.addEventListener('click', async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') {
-                btnInstall.classList.add('hidden');
-                btnInstall.classList.remove('flex');
-            }
-            deferredPrompt = null;
-        } else {
-            showAlert("Para instalar en iPhone: Toca 'Compartir' (el cuadrado con la flecha) y selecciona 'Agregar a inicio'.");
-        }
-    });
-
-    const isIos = () => /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
-    const isInStandaloneMode = () => ('standalone' in window.navigator) && window.navigator.standalone;
-    const isStandaloneQuery = window.matchMedia('(display-mode: standalone)').matches;
-
-    if (isIos() && !isInStandaloneMode() && !isStandaloneQuery && window.innerWidth < 1024) {
-        btnInstall.classList.remove('hidden');
-        btnInstall.classList.add('flex');
-    }
-};
 
 // --- ABSOLUTELY NECESSARY GLOBALS (Glue) ---
 // We export these so other modules can import them if needed, 
