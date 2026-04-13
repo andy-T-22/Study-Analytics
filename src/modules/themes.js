@@ -36,6 +36,13 @@ export const setTheme = (themeName) => {
     // Notify charts to update colors with a slight delay for CSS var propagation
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
+            // Update Android/Browser status bar color
+            const bgMain = getComputedStyle(document.body).getPropertyValue('--bg-main').trim();
+            const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+            if (metaThemeColor && bgMain) {
+                metaThemeColor.setAttribute('content', bgMain);
+            }
+
             updateCharts();
         });
     });
