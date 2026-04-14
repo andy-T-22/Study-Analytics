@@ -29,6 +29,9 @@ export const initData = async (user) => {
 
 // --- PREFERENCES (Lists) ---
 const loadPreferences = async () => {
+    let isOnboarded = false;
+    let needsInitialSave = false;
+
     if (currentUserRef) {
         // Firestore Strategy
         const docRef = doc(db, 'user_preferences', currentUserRef.uid);
@@ -40,13 +43,23 @@ const loadPreferences = async () => {
             methods = data.methods || defaultMethods();
             reasons = data.reasons || defaultReasons();
             subjectColors = data.subjectColors || defaultSubjectColors();
+            
+            if (data.onboarded === undefined) {
+                // Legacy users who registered before this update
+                isOnboarded = true;
+                // Silently upgrade them so we don't ask again
+                updateDoc(docRef, { onboarded: true }).catch(console.error);
+            } else {
+                isOnboarded = data.onboarded === true;
+            }
         } else {
             // Initial Save
-            subjects = defaultSubjects();
-            methods = defaultMethods();
+            subjects = [];
+            methods = [];
             reasons = defaultReasons();
             subjectColors = defaultSubjectColors();
-            await setDoc(docRef, { subjects, methods, reasons, subjectColors });
+            isOnboarded = false;
+            needsInitialSave = true;
         }
     } else {
         // LocalStorage Strategy (Legacy/Guest)
@@ -54,8 +67,147 @@ const loadPreferences = async () => {
         methods = JSON.parse(localStorage.getItem('study_methods') || JSON.stringify(defaultMethods()));
         reasons = JSON.parse(localStorage.getItem('study_reasons') || JSON.stringify(defaultReasons()));
         subjectColors = JSON.parse(localStorage.getItem('study_subject_colors') || JSON.stringify(defaultSubjectColors()));
+        
+        // Handle guest onboarding
+        const guestOnb = localStorage.getItem('guest_onboarded');
+        if (guestOnb) {
+            isOnboarded = true;
+        } else {
+            subjects = [];
+            methods = [];
+            isOnboarded = false;
+        }
     }
+    
+    if (needsInitialSave && currentUserRef) {
+        const docRef = doc(db, 'user_preferences', currentUserRef.uid);
+        await setDoc(docRef, { subjects, methods, reasons, subjectColors, onboarded: false });
+    }
+
     renderAllDropdowns();
+
+    if (!isOnboarded) {
+        showOnboardingUI();
+    }
+};
+
+const showOnboardingUI = () => {
+    const modal = document.getElementById('modal-onboarding');
+    if (!modal) return;
+    
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    let tempSubs = [];
+    let tempMets = [];
+
+    const inputSub = document.getElementById('onboarding-subject-input');
+    const btnSub = document.getElementById('btn-onb-add-sub');
+    const containerSub = document.getElementById('onboarding-subjects-list');
+
+    const inputMet = document.getElementById('onboarding-method-input');
+    const btnMet = document.getElementById('btn-onb-add-met');
+    const containerMet = document.getElementById('onboarding-methods-list');
+
+    const btnFinish = document.getElementById('btn-onboarding-finish');
+    const errMsg = document.getElementById('onb-error-msg');
+
+    const renderOnboardingChips = () => {
+        const drawChips = (arr, container, colorClass, type) => {
+            container.innerHTML = arr.map((item, idx) => `
+                <div class="bg-card border border-theme px-3 py-1 rounded-full text-xs font-bold text-primary flex items-center gap-2 shadow-sm animate-slide-up">
+                    ${item}
+                    <button class="text-red-400 hover:text-red-500 delete-onb-chip" data-type="${type}" data-idx="${idx}"><i class="fas fa-times"></i></button>
+                </div>
+            `).join('');
+
+            container.querySelectorAll('.delete-onb-chip').forEach(btn => {
+                btn.onclick = (e) => {
+                    const t = e.currentTarget.getAttribute('data-type');
+                    const i = parseInt(e.currentTarget.getAttribute('data-idx'));
+                    if (t === 'subject') tempSubs.splice(i, 1);
+                    else tempMets.splice(i, 1);
+                    renderOnboardingChips();
+                };
+            });
+        };
+
+        drawChips(tempSubs, containerSub, 'bg-acc-blue', 'subject');
+        drawChips(tempMets, containerMet, 'bg-acc-peach', 'method');
+    };
+
+    const addSub = () => {
+        const val = inputSub.value.trim();
+        if (val && !tempSubs.includes(val)) {
+            tempSubs.push(val);
+            inputSub.value = '';
+            renderOnboardingChips();
+            errMsg.classList.add('hidden');
+        }
+    };
+
+    const addMet = () => {
+        const val = inputMet.value.trim();
+        if (val && !tempMets.includes(val)) {
+            tempMets.push(val);
+            inputMet.value = '';
+            renderOnboardingChips();
+            errMsg.classList.add('hidden');
+        }
+    };
+
+    btnSub.onclick = addSub;
+    inputSub.onkeydown = (e) => { if (e.key === 'Enter') addSub(); };
+
+    btnMet.onclick = addMet;
+    inputMet.onkeydown = (e) => { if (e.key === 'Enter') addMet(); };
+
+    btnFinish.onclick = async () => {
+        if (tempSubs.length === 0 || tempMets.length === 0) {
+            errMsg.classList.remove('hidden');
+            return;
+        }
+
+        // Apply global
+        subjects = tempSubs;
+        methods = tempMets;
+        
+        // Colors random init
+        tempSubs.forEach(s => {
+            if(!subjectColors[s]) {
+                const randColor = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+                subjectColors[s] = randColor;
+            }
+        });
+
+        // Close modal
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        
+        // Save
+        if (currentUserRef) {
+            try {
+                await updateDoc(doc(db, 'user_preferences', currentUserRef.uid), { 
+                    subjects, 
+                    methods, 
+                    subjectColors,
+                    onboarded: true 
+                });
+            } catch (e) {
+                console.error("Save error", e);
+            }
+        } else {
+            localStorage.setItem('guest_onboarded', 'true');
+            await savePreferences(); // using existing function for generic saves
+        }
+        
+        renderAllDropdowns();
+
+        // Launch tutorial
+        import('./tutorial.js').then((tut) => {
+            tut.startTutorial();
+        });
+    };
 };
 
 const defaultSubjects = () => ["Matemáticas", "Historia", "Programación", "Idioma"];

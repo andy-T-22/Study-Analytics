@@ -23,9 +23,10 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-
       gtag('config', 'G-P87Q3K63B4');
     </script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shepherd.js@11.1.1/dist/css/shepherd.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/shepherd.js@11.1.1/dist/js/shepherd.min.js"></script>
 
     <!-- Critical Styles for Splash Screen -->
     <style>
@@ -745,6 +746,19 @@
                 </div>
 
                 <div class="bg-card p-6 rounded-3xl border border-theme shadow-sm">
+                    <h3 class="text-lg font-bold text-primary mb-6">Guía</h3>
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border border-theme rounded-xl bg-main">
+                        <div>
+                            <span class="text-primary font-bold block">Repetir Tutorial</span>
+                            <span class="text-xs text-secondary block mt-1">Vuelve a ver los globos de ayuda interactiva.</span>
+                        </div>
+                        <button id="btn-restart-tutorial" class="w-full sm:w-auto bg-card border border-theme hover:bg-theme text-primary px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm whitespace-nowrap flex items-center justify-center gap-2">
+                            <i class="fas fa-question-circle"></i> Iniciar
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-card p-6 rounded-3xl border border-theme shadow-sm">
                     <h3 class="text-lg font-bold text-acc-red mb-6">Zona de Peligro</h3>
                     <div class="space-y-4">
                         <div class="flex items-center justify-between p-4 border border-acc-red/30 rounded-xl bg-acc-red/5">
@@ -1044,6 +1058,47 @@
                 <button id="btn-save-manual"
                     class="flex-1 bg-acc-green hover:brightness-95 text-primary font-bold py-3 rounded-xl shadow-sm">Guardar</button>
             </div>
+        </div>
+    </div>
+
+    <!-- MODAL: ONBOARDING SETUP -->
+    <div id="modal-onboarding" class="fixed inset-0 z-[10000] bg-black/80 flex items-center justify-center hidden backdrop-blur-md">
+        <div class="bg-card w-full max-w-lg mx-4 rounded-3xl shadow-2xl border border-theme p-8 animate-slide-up text-center">
+            <h3 class="text-3xl font-black text-primary mb-2">¡Bienvenido a Study Meter!</h3>
+            <p class="text-secondary mb-8 text-sm">Antes de empezar, configuremos tu espacio.</p>
+
+            <div class="space-y-6 text-left">
+                <!-- Subjects -->
+                <div class="glass p-5 rounded-2xl">
+                    <h4 class="text-xs text-secondary uppercase font-bold tracking-wider mb-3">1. Tus Materias / Asignaturas</h4>
+                    <p class="text-[10px] text-secondary mb-3">Las que cursas actualmente.</p>
+                    <div id="onboarding-subjects-list" class="flex flex-wrap gap-2 mb-3">
+                        <!-- Chips go here -->
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="onboarding-subject-input" class="flex-1 bg-transparent border-b border-theme outline-none focus:border-acc-blue transition-colors text-sm px-2" placeholder="Ej: Matemáticas">
+                        <button id="btn-onb-add-sub" class="bg-acc-lavender text-primary font-bold px-3 py-1 rounded-lg text-xs hover:brightness-95"><i class="fas fa-plus"></i></button>
+                    </div>
+                </div>
+
+                <!-- Methods -->
+                <div class="glass p-5 rounded-2xl">
+                    <h4 class="text-xs text-secondary uppercase font-bold tracking-wider mb-3">2. Métodos de Estudio</h4>
+                    <p class="text-[10px] text-secondary mb-3">Ej: Resumir, Leer, Programar.</p>
+                    <div id="onboarding-methods-list" class="flex flex-wrap gap-2 mb-3">
+                        <!-- Chips go here -->
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="onboarding-method-input" class="flex-1 bg-transparent border-b border-theme outline-none focus:border-acc-blue transition-colors text-sm px-2" placeholder="Ej: Resumen">
+                        <button id="btn-onb-add-met" class="bg-acc-peach text-primary font-bold px-3 py-1 rounded-lg text-xs hover:brightness-95"><i class="fas fa-plus"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <button id="btn-onboarding-finish" class="w-full bg-acc-green mt-8 hover:brightness-95 text-primary font-bold py-4 rounded-2xl shadow-lg transition-all transform hover:scale-[1.02] border border-green-200">
+                COMENZAR TUTORIAL <i class="fas fa-arrow-right ml-2 text-primary"></i>
+            </button>
+            <p id="onb-error-msg" class="text-red-500 text-xs mt-3 hidden">Debes agregar al menos una materia y un método para continuar.</p>
         </div>
     </div>
 

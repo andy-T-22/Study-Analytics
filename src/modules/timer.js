@@ -165,8 +165,12 @@ const updatePostGoalDropdown = () => {
             
             let current = goalInput.value;
             if (!list.find(g => g.id === current)) {
-                current = "";
-                goalInput.value = "";
+                if (goals.length === 1) {
+                    current = goals[0].id;
+                } else {
+                    current = "";
+                }
+                goalInput.value = current;
             }
 
             goalGrid.innerHTML = list.map(g => {

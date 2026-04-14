@@ -149,6 +149,14 @@ const bindAccountManager = () => {
             }
         });
     }
+
+    const btnRestartTutorial = document.getElementById('btn-restart-tutorial');
+    if (btnRestartTutorial) {
+        btnRestartTutorial.addEventListener('click', () => {
+            document.getElementById('btn-close-profile').click();
+            import('./tutorial.js').then((tut) => tut.startTutorial());
+        });
+    }
 };
 
 const saveSettings = () => {
