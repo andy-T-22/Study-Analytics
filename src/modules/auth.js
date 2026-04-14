@@ -1,5 +1,5 @@
 import { auth, db } from "../services/firebaseConfig.js";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendEmailVerification, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, deleteUser } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendEmailVerification, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, deleteUser, updatePassword, updateProfile } from "firebase/auth";
 import { doc, deleteDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { initData, loadHistory } from "./data.js";
 
@@ -276,10 +276,14 @@ export const initAuth = () => {
     });
 
     // Logout
-    document.getElementById('btn-logout').addEventListener('click', () => {
-        signOut(auth);
-        location.reload();
-    });
+    const btnLogoutProfile = document.getElementById('btn-logout-profile');
+    if (btnLogoutProfile) {
+        btnLogoutProfile.addEventListener('click', () => {
+            signOut(auth);
+            localStorage.removeItem('app_theme');
+            location.reload();
+        });
+    }
 
     // Delete Account
     const btnDelete = document.getElementById('btn-delete-account');
@@ -366,8 +370,22 @@ const setAppUser = (user) => {
     const appContainer = document.getElementById('app-container');
     appContainer.style.display = 'flex'; // Ensure flex layout
 
+    const displayName = user ? (user.email.split('@')[0]) : 'Invitado';
+    const initial = displayName.charAt(0).toUpperCase();
+
     // Header Info
-    document.getElementById('user-display').textContent = user ? user.email : 'Modo Invitado';
+    document.getElementById('user-display').textContent = displayName;
+    
+    // Header Avatar
+    const profileAvatar = document.getElementById('profile-avatar');
+    if (profileAvatar) profileAvatar.textContent = initial;
+
+    // Inside Profile Modal
+    const overviewName = document.getElementById('overview-name');
+    if (overviewName) overviewName.textContent = user ? user.email : 'Modo Invitado';
+    
+    const overviewAvatar = document.getElementById('overview-avatar');
+    if (overviewAvatar) overviewAvatar.textContent = initial;
 
     // Initialize Data (Lists, History, etc.)
     initData(currentUser);
@@ -414,3 +432,23 @@ const showAuthError = (msg) => {
 };
 
 export const getCurrentUser = () => currentUser;
+
+export const updateUserName = async (newName) => {
+    if (!currentUser) return;
+    return updateProfile(currentUser, { displayName: newName })
+        .then(() => {
+            // Update UI elements silently without fully reloading
+            const headerDisplay = document.getElementById('user-display');
+            if (headerDisplay) headerDisplay.textContent = newName;
+            const profileAvatar = document.getElementById('profile-avatar');
+            const overviewAvatar = document.getElementById('overview-avatar');
+            const initial = newName.charAt(0).toUpperCase();
+            if (profileAvatar) profileAvatar.textContent = initial;
+            if (overviewAvatar) overviewAvatar.textContent = initial;
+        });
+};
+
+export const updateUserPassword = async (newPassword) => {
+    if (!currentUser) throw new Error("No user logged in.");
+    return updatePassword(currentUser, newPassword);
+};

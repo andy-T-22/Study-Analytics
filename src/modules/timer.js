@@ -2,16 +2,15 @@ import { db } from "../services/firebaseConfig.js";
 import { collection, addDoc } from "firebase/firestore";
 import { getCurrentUser } from "./auth.js";
 import { formatTime, showAlert, getStyle } from "./utils.js";
-import { loadHistory, getSubjects, getMethods } from "./data.js";
+import { loadHistory, getSubjects, getMethods, renderAllDropdowns } from "./data.js";
 import { getFeedback } from "./feedback.js";
 import { renderDailyPlan } from "./dailyGoal.js"; // New Import
 import { faviconAnimator } from "./favicon.js";
 
+import { appSettings } from './profile.js';
+
 let activeSession = null;
 let timerInterval = null;
-let appSettings = JSON.parse(localStorage.getItem('app_settings') || '{"showSeconds": true, "showFavicon": true}');
-
-// DOM Elements (Cached)
 const dom = {
     setup: () => document.getElementById('tracker-setup'),
     active: () => document.getElementById('tracker-active'),
@@ -26,10 +25,11 @@ const dom = {
     btnToggleFav: () => document.getElementById('btn-toggle-favicon'),
     // Post Session Modal
     postModal: () => document.getElementById('modal-post-session'),
-    postSub: () => document.getElementById('post-subject'),
-    postGoal: () => document.getElementById('post-goal'),
+    postSub: () => document.getElementById('post-subject-input'),
+    postGoalGrid: () => document.getElementById('post-goal'),
+    postGoalInput: () => document.getElementById('post-goal-input'),
     postGoalWrap: () => document.getElementById('post-goal-wrapper'),
-    postMeth: () => document.getElementById('post-method'),
+    postMeth: () => document.getElementById('post-method-input'),
     btnPostContinue: () => document.getElementById('btn-post-continue'),
     // Summary Modal
     summaryModal: () => document.getElementById('modal-summary'),
@@ -88,14 +88,7 @@ export const initTimer = () => {
         dom.btnCloseSum().onclick = closeSummaryAndReset;
     }
 
-    // Settings (Seconds Toggle)
-    const btnSec = document.getElementById('btn-toggle-seconds');
-    if (btnSec) btnSec.onclick = toggleSeconds;
 
-    const btnFav = document.getElementById('btn-toggle-favicon');
-    if (btnFav) btnFav.onclick = toggleFavicon;
-
-    // Initialize Favicon State
     faviconAnimator.setEnabled(appSettings.showFavicon);
 
     // Goal Filter Logic
@@ -105,17 +98,23 @@ export const initTimer = () => {
     // Post Session Resume
     if (dom.btnPostContinue()) dom.btnPostContinue().onclick = completeSession;
 
-    renderSettingsUI();
+    // Event listener for remote updates from profile.js
+    window.addEventListener('app_settings_updated', () => {
+        faviconAnimator.setEnabled(appSettings.showFavicon);
+        if (activeSession) tick();
+    });
 };
 
 
 const updatePostGoalDropdown = () => {
     const sub = dom.postSub().value;
     const goalWrap = dom.postGoalWrap();
-    const goalSel = dom.postGoal();
+    const goalGrid = dom.postGoalGrid();
+    const goalInput = dom.postGoalInput();
 
-    if (!sub) {
-        goalWrap.classList.add('hidden');
+    if (!sub || !goalGrid || !goalInput) {
+        if(goalWrap) goalWrap.classList.add('hidden');
+        if(goalInput) goalInput.value = "";
         return;
     }
 
@@ -123,12 +122,41 @@ const updatePostGoalDropdown = () => {
         const goals = getCurrentGoals().filter(g => g.subject === sub && g.status === 'active');
 
         if (goals.length > 0) {
-            goalSel.innerHTML = '<option value="">-- Sin vincular --</option>' +
-                goals.map(g => `<option value="${g.id}">${g.nombre}</option>`).join('');
+            const list = [{id: "", nombre: "-- Sin vincular --"}, ...goals];
+            
+            let current = goalInput.value;
+            if (!list.find(g => g.id === current)) {
+                current = "";
+                goalInput.value = "";
+            }
+
+            goalGrid.innerHTML = list.map(g => {
+                const isSelected = g.id === current;
+                const baseClass = isSelected ? 'opacity-100 scale-95 shadow-inner bg-card' : 'opacity-80 hover:opacity-100 hover:scale-[1.02] shadow-sm bg-card';
+                const selBorder = getStyle('--acc-blue-dark') || '#74a8db';
+                const currentBorder = isSelected ? selBorder : 'var(--border-color)';
+                
+                return `
+                <div data-val="${g.id}" class="goal-grid-selectable cursor-pointer flex items-center p-3 rounded-xl border-[2px] transition-all ${baseClass}" style="border-color: ${currentBorder};">
+                    <div class="h-4 w-4 rounded-full border mr-2 flex items-center justify-center flex-shrink-0" style="border-color: ${currentBorder}">
+                        ${isSelected ? '<div class="h-2 w-2 rounded-full bg-theme"></div>' : ''}
+                    </div>
+                    <div class="text-xs font-bold flex-1 truncate text-primary">${g.nombre}</div>
+                </div>
+                `;
+            }).join('');
+
+            goalGrid.querySelectorAll('.goal-grid-selectable').forEach(el => {
+                el.onclick = () => {
+                    goalInput.value = el.getAttribute('data-val');
+                    updatePostGoalDropdown();
+                };
+            });
+
             goalWrap.classList.remove('hidden');
         } else {
             goalWrap.classList.add('hidden');
-            goalSel.value = "";
+            goalInput.value = "";
         }
     });
 };
@@ -253,20 +281,21 @@ const stopSession = async () => {
 };
 
 const populatePostSessionModal = () => {
-    // 1. Subjects
-    const subs = getSubjects();
-    dom.postSub().innerHTML = subs.map(s => `<option value="${s}">${s}</option>`).join('');
+    // Re-render grids specifically
+    renderAllDropdowns();
 
-    // 2. Methods
-    const mets = getMethods();
-    dom.postMeth().innerHTML = mets.map(m => `<option value="${m}">${m}</option>`).join('');
-
-    // 3. Autocomplete from local storage
+    // Autocomplete from local storage
     const lastSub = localStorage.getItem('last_subject');
     const lastMet = localStorage.getItem('last_method');
+    const subs = getSubjects();
+    const mets = getMethods();
 
     if (lastSub && subs.includes(lastSub)) dom.postSub().value = lastSub;
     if (lastMet && mets.includes(lastMet)) dom.postMeth().value = lastMet;
+
+    // We must re-render the grids so they show the correct visual boundary selections:
+    renderAllDropdowns(); // 2nd render passes the newly set hidden input values to grid
+
 
     // Trigger goal update
     updatePostGoalDropdown();
@@ -275,7 +304,7 @@ const populatePostSessionModal = () => {
 const completeSession = async () => {
     const sub = dom.postSub().value;
     const met = dom.postMeth().value;
-    const goalId = dom.postGoal().value;
+    const goalId = dom.postGoalInput().value;
 
     if (!sub || !met) return showAlert("Por favor completa la información.");
 
@@ -404,42 +433,4 @@ const saveLocal = () => {
     if (activeSession) localStorage.setItem('study_session', JSON.stringify(activeSession));
 };
 
-// --- SETTINGS ---
-const toggleSeconds = () => {
-    appSettings.showSeconds = !appSettings.showSeconds;
-    localStorage.setItem('app_settings', JSON.stringify(appSettings));
-    renderSettingsUI();
-    if (activeSession) tick(); // update display
-};
 
-const toggleFavicon = () => {
-    appSettings.showFavicon = !appSettings.showFavicon;
-    localStorage.setItem('app_settings', JSON.stringify(appSettings));
-    faviconAnimator.setEnabled(appSettings.showFavicon);
-    renderSettingsUI();
-};
-
-const renderSettingsUI = () => {
-    const btn = dom.btnToggleSecs();
-    if (!btn) return;
-    const knob = btn.firstElementChild;
-    if (appSettings.showSeconds) {
-        btn.className = "w-12 h-6 bg-[#a5f5c3] rounded-full relative transition-colors duration-300";
-        knob.className = "w-4 h-4 bg-white rounded-full absolute top-1 right-1 transition-transform duration-300";
-    } else {
-        btn.className = "w-12 h-6 bg-[#d1cbc1] rounded-full relative transition-colors duration-300";
-        knob.className = "w-4 h-4 bg-white rounded-full absolute top-1 left-1 transition-transform duration-300";
-    }
-
-    const btnFav = dom.btnToggleFav();
-    if (btnFav) {
-        const knobFav = btnFav.firstElementChild;
-        if (appSettings.showFavicon) {
-            btnFav.className = "w-12 h-6 bg-[#a5f5c3] rounded-full relative transition-colors duration-300";
-            knobFav.className = "w-4 h-4 bg-white rounded-full absolute top-1 right-1 transition-transform duration-300";
-        } else {
-            btnFav.className = "w-12 h-6 bg-[#d1cbc1] rounded-full relative transition-colors duration-300";
-            knobFav.className = "w-4 h-4 bg-white rounded-full absolute top-1 left-1 transition-transform duration-300";
-        }
-    }
-};

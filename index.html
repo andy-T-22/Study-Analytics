@@ -224,10 +224,9 @@
                             <span>App</span>
                         </button>
                     </div>
-                    <span id="user-display" class="text-xs text-secondary font-mono hidden md:block">User</span>
-                    <button id="btn-logout"
-                        class="text-xs bg-btn-secondary hover:bg-acc-red hover:text-primary text-primary px-3 py-1.5 rounded transition-colors">
-                        Salir
+                    <button id="btn-open-profile" class="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full border border-theme bg-btn-secondary hover:bg-theme transition-colors shadow-sm ml-2">
+                        <div class="h-6 w-6 rounded-full bg-acc-blue text-primary flex items-center justify-center text-[10px] font-bold font-mono shadow-inner" id="profile-avatar">U</div>
+                        <span id="user-display" class="text-xs font-bold text-primary hidden md:block max-w-[100px] truncate">Usuario</span>
                     </button>
                 </div>
             </header>
@@ -308,12 +307,7 @@
                 </div>
 
                 <!-- TRACKER VIEW -->
-                <section id="view-tracker" class="fade-in space-y-8">
-                    <div class="flex justify-end">
-                        <button id="btn-settings-toggle" class="text-secondary hover:text-primary">
-                            <i class="fas fa-cog"></i> Config
-                        </button>
-                    </div>
+                <section id="view-tracker" class="fade-in space-y-8 mt-4 pt-2">
 
                     <!-- Main Tracker Layout -->
                     <div class="relative flex flex-col items-center">
@@ -380,7 +374,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="glass p-6 rounded-3xl flex flex-col justify-center items-center text-center">
                             <h3 class="text-secondary text-xs font-bold uppercase mb-2">Total de Horas Estudiadas</h3>
-                            <div id="stat-total-hours" class="text-4xl font-black text-primary">0h 0m</div>
+                            <div id="dash-stat-total-hours" class="text-4xl font-black text-primary">0h 0m</div>
                         </div>
                         <div class="glass p-6 rounded-3xl flex flex-col justify-center items-center text-center">
                             <h3 class="text-secondary text-xs font-bold uppercase mb-2">Materia Más Estudiada</h3>
@@ -533,105 +527,253 @@
         </button>
     </div>
 
-    <!-- MODAL: SETTINGS -->
-    <div id="modal-settings"
-        class="fixed inset-0 z-50 bg-black/40 flex items-center justify-center hidden backdrop-blur-sm">
-        <div
-            class="bg-card p-8 rounded-3xl max-w-2xl w-full mx-4 shadow-xl border border-theme max-h-[90vh] overflow-y-auto">
-            <h3 class="text-xl font-bold text-primary mb-6">Configuraciones</h3>
-            <div class="flex items-center justify-between mb-8">
-                <span class="text-primary font-medium">Mostrar Segundos</span>
-                <button id="btn-toggle-seconds"
-                    class="w-12 h-6 bg-gray-300 rounded-full relative transition-colors duration-300">
-                    <div class="w-4 h-4 bg-white rounded-full absolute top-1 left-1 transition-transform duration-300">
-                    </div>
+    
+    <!-- MODAL: PROFILE -->
+    <div id="modal-profile" class="fixed inset-0 z-50 bg-main flex flex-col md:flex-row hidden animate-in slide-in-from-bottom-5">
+        <!-- Sidebar Navigation -->
+        <div class="w-full md:w-64 border-b md:border-b-0 md:border-r border-theme bg-card/30 flex flex-col pt-4 md:pt-8 md:px-0">
+            <!-- Mobile Close Button (Header on mobile) -->
+            <div class="md:hidden flex justify-between items-center px-4 mb-4">
+                <h2 class="text-xl font-bold text-primary">Mi Perfil</h2>
+                <button id="btn-close-profile-mobile" class="text-secondary hover:text-primary">
+                    <i class="fas fa-times text-2xl"></i>
                 </button>
-            </div>
-            <div class="flex items-center justify-between mb-8">
-                <span class="text-primary font-medium">Animación de Pestaña</span>
-                <button id="btn-toggle-favicon"
-                    class="w-12 h-6 bg-gray-300 rounded-full relative transition-colors duration-300">
-                    <div class="w-4 h-4 bg-white rounded-full absolute top-1 left-1 transition-transform duration-300">
-                    </div>
-                </button>
-            </div>
-            <div class="flex items-center justify-between mb-8">
-                <span class="text-primary font-medium">Gestionar Materias</span>
-                <button class="btn-manage-subjects bg-card border border-theme hover:bg-main text-primary px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm">
-                    Abrir Gestor
-                </button>
-            </div>
-            <div class="flex items-center justify-between mb-8">
-                <span class="text-primary font-medium">Gestionar Distracciones</span>
-                <button class="btn-manage-reasons bg-card border border-theme hover:bg-main text-primary px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm">
-                    Abrir Gestor
-                </button>
-            </div>
-            <div class="mb-8">
-                <h4 class="text-primary font-bold mb-4">Tema de Colores</h4>
-                <div class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 gap-3" id="theme-grid">
-                    <!-- Themes buttons will be here, migrated from HTML or generated. HTML had them hardcoded. -->
-                    <button data-theme-btn="pastel"
-                        class="w-12 h-12 rounded-lg bg-[#fcfbf7] border-2 border-theme transform hover:scale-110 transition-transform shadow-sm"
-                        title="Pastel"></button>
-                    <button data-theme-btn="white"
-                        class="w-12 h-12 rounded-lg bg-[#ffffff] border-2 border-theme transform hover:scale-110 transition-transform shadow-sm"
-                        title="Blanco"></button>
-                    <button data-theme-btn="dark"
-                        class="w-12 h-12 rounded-lg bg-[#2d2d2d] border-2 border-theme transform hover:scale-110 transition-transform shadow-sm"
-                        title="Oscuro"></button>
-                    <button data-theme-btn="forest"
-                        class="w-12 h-12 rounded-lg bg-[#1c2321] border-2 border-theme transform hover:scale-110 transition-transform shadow-sm"
-                        title="Bosque"></button>
-                    <button data-theme-btn="ocean"
-                        class="w-12 h-12 rounded-lg bg-[#0f172a] border-2 border-theme transform hover:scale-110 transition-transform shadow-sm"
-                        title="Océano"></button>
-                    <button data-theme-btn="sunset"
-                        class="w-12 h-12 rounded-lg bg-[#2a1b2e] border-2 border-theme transform hover:scale-110 transition-transform shadow-sm"
-                        title="Atardecer"></button>
-                    <button data-theme-btn="mint"
-                        class="w-12 h-12 rounded-lg bg-[#f0fdf4] border-2 border-theme transform hover:scale-110 transition-transform shadow-sm"
-                        title="Menta"></button>
-                    <button data-theme-btn="rose"
-                        class="w-12 h-12 rounded-lg bg-[#fff1f2] border-2 border-theme transform hover:scale-110 transition-transform shadow-sm"
-                        title="Rosa"></button>
-                    <button data-theme-btn="amber"
-                        class="w-12 h-12 rounded-lg bg-[#fffbeb] border-2 border-theme transform hover:scale-110 transition-transform shadow-sm"
-                        title="Ámbar"></button>
-                    <button data-theme-btn="midnight"
-                        class="w-12 h-12 rounded-lg bg-[#0c0a09] border-2 border-theme transform hover:scale-110 transition-transform shadow-sm"
-                        title="Medianoche"></button>
-                    <button data-theme-btn="emerald"
-                        class="w-12 h-12 rounded-lg bg-[#064e3b] border-2 border-theme transform hover:scale-110 transition-transform shadow-sm"
-                        title="Esmeralda"></button>
-                    <button data-theme-btn="lavender"
-                        class="w-12 h-12 rounded-lg bg-[#faf5ff] border-2 border-theme transform hover:scale-110 transition-transform shadow-sm"
-                        title="Lavanda"></button>
-                    <button data-theme-btn="coffee"
-                        class="w-12 h-12 rounded-lg bg-[#292524] border-2 border-theme transform hover:scale-110 transition-transform shadow-sm"
-                        title="Café"></button>
-                </div>
             </div>
             
-            <hr class="border-theme my-6">
-
-            <!-- Danger Zone -->
-            <div class="flex items-center justify-between mb-8">
-                <div>
-                    <span class="text-acc-red font-bold block">Zona de Peligro</span>
-                    <span class="text-xs text-secondary">Eliminar permanentemente tu cuenta y todos tus datos.</span>
-                </div>
-                <button id="btn-delete-account" class="bg-acc-red/10 border border-acc-red hover:bg-acc-red text-acc-red hover:text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm whitespace-nowrap">
-                    Eliminar Cuenta
+            <div class="flex md:flex-col overflow-x-auto hide-scrollbar px-2 md:px-4 md:space-y-1 gap-2 md:gap-0 pb-2 md:pb-0">
+                <button data-profile-tab="overview" class="flex-shrink-0 md:w-full text-left px-4 py-2.5 rounded-lg font-bold text-sm bg-theme text-primary transition-colors flex items-center gap-2">
+                    <i class="fas fa-user text-acc-blue w-5"></i> Resumen
+                </button>
+                <button data-profile-tab="appearance" class="flex-shrink-0 md:w-full text-left px-4 py-2.5 rounded-lg font-bold text-sm text-secondary hover:bg-theme/50 hover:text-primary transition-colors flex items-center gap-2">
+                    <i class="fas fa-paint-brush text-acc-peach w-5"></i> Apariencia
+                </button>
+                <button data-profile-tab="organize" class="flex-shrink-0 md:w-full text-left px-4 py-2.5 rounded-lg font-bold text-sm text-secondary hover:bg-theme/50 hover:text-primary transition-colors flex items-center gap-2">
+                    <i class="fas fa-book text-acc-green w-5"></i> Organización
+                </button>
+                <button data-profile-tab="account" class="flex-shrink-0 md:w-full text-left px-4 py-2.5 rounded-lg font-bold text-sm text-secondary hover:bg-theme/50 hover:text-primary transition-colors flex items-center gap-2">
+                    <i class="fas fa-shield-alt text-acc-red w-5"></i> Cuenta
                 </button>
             </div>
+            
+            <div class="hidden md:block mt-auto p-4 border-t border-theme">
+                <button id="btn-close-profile-desktop" class="w-full py-2.5 bg-btn-secondary hover:bg-btn-secondary-hover text-primary font-bold rounded-lg transition-colors flex items-center justify-center gap-2">
+                    <i class="fas fa-arrow-left"></i> Volver a Estudiar
+                </button>
+            </div>
+        </div>
 
-            <div class="flex justify-end">
-                <button id="btn-close-settings"
-                    class="bg-btn-secondary hover:bg-btn-secondary-hover text-primary px-4 py-2 rounded-lg font-bold transition-colors">Cerrar</button>
+        <!-- Content Area -->
+        <div class="flex-1 overflow-y-auto p-4 md:p-10 relative bg-main hide-scrollbar">
+            <!-- TAB: OVERVIEW -->
+            <div id="profile-tab-overview" class="profile-content max-w-3xl mx-auto space-y-8 fade-in">
+                <div class="flex items-center gap-6 p-6 md:p-8 bg-card border border-theme rounded-3xl shadow-sm">
+                    <div id="overview-avatar" class="h-20 w-20 md:h-24 md:w-24 rounded-full bg-acc-blue text-primary flex items-center justify-center text-4xl font-bold font-mono shadow-inner border border-theme uppercase">U</div>
+                    <div>
+                        <h2 id="overview-name" class="text-2xl font-black text-primary mb-1">Cargando...</h2>
+                        <span id="overview-level" class="text-acc-blue font-bold text-sm flex items-center gap-1.5"><i class="fas fa-star"></i> Estudiante Activo</span>
+                    </div>
+                </div>
+
+                <h3 class="text-lg font-bold text-primary px-2">Tus Estadísticas</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-card p-5 rounded-2xl border border-theme shadow-sm flex flex-col items-center justify-center text-center">
+                        <i class="fas fa-hourglass-half text-acc-peach text-2xl mb-2"></i>
+                        <span class="text-3xl font-black text-primary font-mono" id="profile-stat-total-hours">0h</span>
+                        <span class="text-xs text-secondary font-bold uppercase mt-1">Tiempo Total</span>
+                    </div>
+                    <div class="bg-card p-5 rounded-2xl border border-theme shadow-sm flex flex-col items-center justify-center text-center">
+                        <i class="fas fa-bolt text-acc-blue text-2xl mb-2"></i>
+                        <span class="text-3xl font-black text-primary font-mono" id="stat-efficiency">0%</span>
+                        <span class="text-xs text-secondary font-bold uppercase mt-1">Eficiencia Global</span>
+                    </div>
+                    <div class="bg-card p-5 rounded-2xl border border-theme shadow-sm flex flex-col items-center justify-center text-center">
+                        <i class="fas fa-fire text-orange-500 text-2xl mb-2"></i>
+                        <span class="text-3xl font-black text-primary font-mono" id="stat-max-streak">0</span>
+                        <span class="text-xs text-secondary font-bold uppercase mt-1">Mejor Racha</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: APPEARANCE -->
+            <div id="profile-tab-appearance" class="profile-content max-w-3xl mx-auto space-y-8 hidden fade-in">
+                <div class="bg-card p-6 rounded-3xl border border-theme shadow-sm">
+                    <h3 class="text-lg font-bold text-primary mb-6">Tema de Colores</h3>
+                    <div class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 gap-3" id="theme-grid">
+                        <button data-theme-btn="pastel" class="w-12 h-12 rounded-lg bg-[#fcfbf7] border-2 border-theme transform hover:scale-110 transition-transform shadow-sm" title="Pastel"></button>
+                        <button data-theme-btn="white" class="w-12 h-12 rounded-lg bg-[#ffffff] border-2 border-theme transform hover:scale-110 transition-transform shadow-sm" title="Blanco"></button>
+                        <button data-theme-btn="dark" class="w-12 h-12 rounded-lg bg-[#2d2d2d] border-2 border-theme transform hover:scale-110 transition-transform shadow-sm" title="Oscuro"></button>
+                        <button data-theme-btn="forest" class="w-12 h-12 rounded-lg bg-[#1c2321] border-2 border-theme transform hover:scale-110 transition-transform shadow-sm" title="Bosque"></button>
+                        <button data-theme-btn="ocean" class="w-12 h-12 rounded-lg bg-[#0f172a] border-2 border-theme transform hover:scale-110 transition-transform shadow-sm" title="Océano"></button>
+                        <button data-theme-btn="sunset" class="w-12 h-12 rounded-lg bg-[#2a1b2e] border-2 border-theme transform hover:scale-110 transition-transform shadow-sm" title="Atardecer"></button>
+                        <button data-theme-btn="mint" class="w-12 h-12 rounded-lg bg-[#f0fdf4] border-2 border-theme transform hover:scale-110 transition-transform shadow-sm" title="Menta"></button>
+                        <button data-theme-btn="rose" class="w-12 h-12 rounded-lg bg-[#fff1f2] border-2 border-theme transform hover:scale-110 transition-transform shadow-sm" title="Rosa"></button>
+                        <button data-theme-btn="amber" class="w-12 h-12 rounded-lg bg-[#fffbeb] border-2 border-theme transform hover:scale-110 transition-transform shadow-sm" title="Ámbar"></button>
+                        <button data-theme-btn="midnight" class="w-12 h-12 rounded-lg bg-[#0c0a09] border-2 border-theme transform hover:scale-110 transition-transform shadow-sm" title="Medianoche"></button>
+                        <button data-theme-btn="emerald" class="w-12 h-12 rounded-lg bg-[#064e3b] border-2 border-theme transform hover:scale-110 transition-transform shadow-sm" title="Esmeralda"></button>
+                        <button data-theme-btn="lavender" class="w-12 h-12 rounded-lg bg-[#faf5ff] border-2 border-theme transform hover:scale-110 transition-transform shadow-sm" title="Lavanda"></button>
+                        <button data-theme-btn="coffee" class="w-12 h-12 rounded-lg bg-[#292524] border-2 border-theme transform hover:scale-110 transition-transform shadow-sm" title="Café"></button>
+                    </div>
+                </div>
+
+                <div class="bg-card p-6 rounded-3xl border border-theme shadow-sm mt-6">
+                    <h3 class="text-lg font-bold text-primary mb-6">Opciones Visuales y Auditivas</h3>
+                    <div class="space-y-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="text-primary font-bold block">Sonido al Completar</span>
+                                <span class="text-xs text-secondary mt-1 block">Reproducir una suave campana al terminar.</span>
+                            </div>
+                            <button id="btn-toggle-sound" class="w-12 h-6 bg-gray-300 rounded-full relative transition-colors duration-300">
+                                <div class="w-4 h-4 bg-white rounded-full absolute top-1 left-1 transition-transform duration-300"></div>
+                            </button>
+                        </div>
+                        <hr class="border-theme">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="text-primary font-bold block">Mostrar Segundos</span>
+                                <span class="text-xs text-secondary mt-1 block">Ver los segundos en el reloj principal.</span>
+                            </div>
+                            <button id="btn-toggle-seconds" class="w-12 h-6 bg-gray-300 rounded-full relative transition-colors duration-300">
+                                <div class="w-4 h-4 bg-white rounded-full absolute top-1 left-1 transition-transform duration-300"></div>
+                            </button>
+                        </div>
+                        <hr class="border-theme">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="text-primary font-bold block">Animar Título de Pestaña</span>
+                                <span class="text-xs text-secondary mt-1 block">El reloj se actualiza en el icono de la web.</span>
+                            </div>
+                            <button id="btn-toggle-favicon" class="w-12 h-6 bg-gray-300 rounded-full relative transition-colors duration-300">
+                                <div class="w-4 h-4 bg-white rounded-full absolute top-1 left-1 transition-transform duration-300"></div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <!-- TAB: ORGANIZE -->
+            <div id="profile-tab-organize" class="profile-content max-w-3xl mx-auto space-y-6 hidden fade-in">
+                <div class="bg-card rounded-3xl border border-theme shadow-sm overflow-hidden flex flex-col max-h-[80vh]">
+                    <div class="p-6 border-b border-theme flex justify-between items-center bg-card/50 backdrop-blur">
+                        <div>
+                            <h3 class="text-lg font-bold text-primary">Gestionar Materias</h3>
+                            <p class="text-xs text-secondary mt-1">Añade o personaliza el color de tus materias.</p>
+                        </div>
+                        <button id="btn-add-subject-inline" class="flex-shrink-0 bg-btn-secondary border border-theme text-primary hover:bg-theme font-bold py-2 px-4 rounded-lg transition-colors shadow-sm ml-4 text-sm flex items-center gap-2">
+                            <i class="fas fa-plus"></i> <span class="hidden md:inline">Nueva Materia</span>
+                        </button>
+                    </div>
+                    <div id="inline-manager-subjects" class="p-6 gap-4 grid grid-cols-2 md:grid-cols-3 overflow-y-auto flex-1 auto-rows-max hide-scrollbar bg-main/30">
+                        <!-- Injected Subjects -->
+                    </div>
+                </div>
+                
+                <div class="bg-card rounded-3xl border border-theme shadow-sm overflow-hidden flex flex-col max-h-[60vh]">
+                    <div class="p-6 border-b border-theme flex justify-between items-center bg-card/50 backdrop-blur">
+                        <div>
+                            <h3 class="text-lg font-bold text-primary">Gestionar Distracciones</h3>
+                            <p class="text-xs text-secondary mt-1">Motivos usuales de pausas.</p>
+                        </div>
+                        <button id="btn-add-reason-inline" class="flex-shrink-0 bg-btn-secondary border border-theme text-primary hover:bg-theme font-bold py-2 px-4 rounded-lg transition-colors shadow-sm ml-4 text-sm flex items-center gap-2">
+                            <i class="fas fa-plus"></i> <span class="hidden md:inline">Nueva Distracción</span>
+                        </button>
+                    </div>
+                    <div id="inline-manager-reasons" class="p-6 space-y-3 overflow-y-auto flex-1 bg-main/30">
+                        <!-- Injected Reasons -->
+                    </div>
+                </div>
+
+                <div class="bg-card rounded-3xl border border-theme shadow-sm overflow-hidden flex flex-col max-h-[60vh]">
+                    <div class="p-6 border-b border-theme flex justify-between items-center bg-card/50 backdrop-blur">
+                        <div>
+                            <h3 class="text-lg font-bold text-primary">Gestionar Métodos</h3>
+                            <p class="text-xs text-secondary mt-1">Modos de estudio usados comúnmente.</p>
+                        </div>
+                        <button id="btn-add-method-inline" class="flex-shrink-0 bg-btn-secondary border border-theme text-primary hover:bg-theme font-bold py-2 px-4 rounded-lg transition-colors shadow-sm ml-4 text-sm flex items-center gap-2">
+                            <i class="fas fa-plus"></i> <span class="hidden md:inline">Nuevo Método</span>
+                        </button>
+                    </div>
+                    <div id="inline-manager-methods" class="p-6 space-y-3 overflow-y-auto flex-1 bg-main/30">
+                        <!-- Injected Methods -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: ACCOUNT -->
+            <div id="profile-tab-account" class="profile-content max-w-3xl mx-auto space-y-6 hidden fade-in">
+                
+                <!-- Admin Cuenta -->
+                <div class="bg-card p-6 rounded-3xl border border-theme shadow-sm">
+                    <h3 class="text-lg font-bold text-primary mb-6">Administrar Cuenta</h3>
+                    <div class="space-y-4">
+                        <div class="flex flex-col">
+                            <label class="text-xs text-secondary font-bold uppercase mb-1">Correo Electrónico (Solo Lectura)</label>
+                            <input type="email" id="acc-cfg-email" readonly class="w-full bg-main border border-theme rounded-xl p-3 text-secondary font-bold outline-none cursor-not-allowed opacity-70">
+                        </div>
+                        <div class="flex items-end gap-2">
+                            <div class="flex-1 flex flex-col">
+                                <label class="text-xs text-secondary font-bold uppercase mb-1">Nombre Visible</label>
+                                <input type="text" id="acc-cfg-name" placeholder="Ej: Focus Master" class="w-full bg-main border border-theme focus:border-acc-blue rounded-xl p-3 text-primary font-bold outline-none transition-colors">
+                            </div>
+                            <button id="btn-save-acc-name" class="flex-shrink-0 bg-acc-blue hover:brightness-110 text-primary font-bold py-3 px-6 rounded-xl transition-all shadow-sm">Guardar</button>
+                        </div>
+                        <div class="pt-4 border-t border-theme">
+                            <button id="btn-change-password" class="w-full sm:w-auto bg-card border border-theme hover:bg-theme text-primary px-4 py-3 rounded-xl text-sm font-bold transition-colors shadow-sm flex items-center justify-center gap-2">
+                                <i class="fas fa-key text-acc-blue"></i> Cambiar Contraseña Segura
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-card p-6 rounded-3xl border border-theme shadow-sm">
+                    <h3 class="text-lg font-bold text-primary mb-6">Tus Datos</h3>
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border border-theme rounded-xl bg-main">
+                        <div>
+                            <span class="text-primary font-bold block">Historial Completo CSV</span>
+                            <span class="text-xs text-secondary block mt-1">Exporta un archivo analizable con todas tus métricas registradas.</span>
+                        </div>
+                        <button id="btn-export-csv" class="w-full sm:w-auto bg-card border border-theme hover:bg-theme text-primary px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm whitespace-nowrap flex items-center justify-center gap-2">
+                            <i class="fas fa-file-csv"></i> Descargar CSV
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-card p-6 rounded-3xl border border-theme shadow-sm">
+                    <h3 class="text-lg font-bold text-acc-red mb-6">Zona de Peligro</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between p-4 border border-acc-red/30 rounded-xl bg-acc-red/5">
+                            <div>
+                                <span class="text-primary font-bold block">Borrar todo el Historial</span>
+                                <span class="text-xs text-secondary block mt-1 max-w-[200px] md:max-w-full">Eliminará todas tus sesiones estadísticas.</span>
+                            </div>
+                            <button id="btn-clear-history-only" class="bg-acc-red/10 border border-acc-red hover:bg-acc-red text-acc-red hover:text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm whitespace-nowrap">
+                                Borrar Datos
+                            </button>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-4 border border-acc-red/30 rounded-xl bg-acc-red/5">
+                            <div>
+                                <span class="text-primary font-bold block">Eliminar Cuenta de Usuario</span>
+                                <span class="text-xs text-secondary block mt-1 max-w-[200px] md:max-w-full">Borrar cuenta e historial permanentemente.</span>
+                            </div>
+                            <button id="btn-delete-account" class="bg-acc-red/10 border border-acc-red hover:bg-acc-red text-acc-red hover:text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm whitespace-nowrap">
+                                Borrar Cuenta
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-4 flex justify-center">
+                     <button id="btn-logout-profile" class="text-secondary hover:text-acc-red font-bold text-sm px-6 py-3 rounded-xl transition-colors border border-transparent hover:bg-acc-red/10 flex items-center gap-2">
+                         <i class="fas fa-sign-out-alt"></i> Cerrar Sesión Segura
+                     </button>
+                </div>
             </div>
         </div>
     </div>
+
 
     <!-- MODAL: MANAGER (Subjects / Methods) -->
     <div id="modal-manager"
@@ -918,20 +1060,22 @@
                             Gestionar
                         </button>
                     </div>
-                    <select id="post-subject"
-                        class="w-full rounded-xl p-3 text-sm shadow-sm outline-none border border-theme focus:ring-2 focus:ring-blue-300">
+                    <input type="hidden" id="post-subject-input">
+                    <div id="post-subject" class="grid grid-cols-2 lg:grid-cols-3 gap-2 overflow-y-auto hide-scrollbar max-h-40 p-1">
+
                         <!-- Populated dynamically -->
-                    </select>
+                    </div>
                 </div>
 
                 <!-- Goal -->
                 <div id="post-goal-wrapper" class="hidden">
                     <label class="text-[10px] text-secondary uppercase font-bold tracking-wider mb-1 block">Vincular
                         Objetivo</label>
-                    <select id="post-goal"
-                        class="w-full rounded-xl p-3 text-sm shadow-sm outline-none border border-theme focus:ring-2 focus:ring-blue-300 bg-acc-blue/5">
-                        <option value="">-- Sin vincular --</option>
-                    </select>
+                    <input type="hidden" id="post-goal-input">
+                    <div id="post-goal" class="grid grid-cols-2 lg:grid-cols-3 gap-2 overflow-y-auto hide-scrollbar max-h-40 p-1">
+
+
+                    </div>
                 </div>
 
                 <!-- Method -->
@@ -942,10 +1086,11 @@
                             Gestionar
                         </button>
                     </div>
-                    <select id="post-method"
-                        class="w-full rounded-xl p-3 text-sm shadow-sm outline-none border border-theme focus:ring-2 focus:ring-blue-300">
+                    <input type="hidden" id="post-method-input">
+                    <div id="post-method" class="grid grid-cols-2 lg:grid-cols-3 gap-2 overflow-y-auto hide-scrollbar max-h-40 p-1">
+
                         <!-- Populated dynamically -->
-                    </select>
+                    </div>
                 </div>
             </div>
 
@@ -1027,6 +1172,29 @@
 
 
     <script type="module" src="/src/main.js"></script>
+    
+    <!-- MODAL: CHANGE PASSWORD -->
+    <div id="modal-change-password" class="fixed inset-0 z-[90] bg-black/60 flex items-center justify-center hidden backdrop-blur-sm">
+        <div class="bg-card w-full max-w-sm mx-4 rounded-3xl shadow-2xl border border-theme p-6 relative">
+            <button id="btn-close-password-modal" class="absolute top-4 right-4 text-secondary hover:text-primary transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            <h3 class="text-xl font-bold text-primary mb-2">Cambiar Contraseña</h3>
+            <p class="text-xs text-secondary mb-6">Ingresa tu nueva contraseña. Debe tener al menos 6 caracteres.</p>
+            
+            <div class="space-y-4">
+                <div class="flex flex-col">
+                    <label class="text-[10px] text-secondary font-bold uppercase mb-1">Nueva Contraseña</label>
+                    <input type="password" id="input-new-password" placeholder="••••••" class="w-full bg-main border border-theme focus:border-acc-blue rounded-xl p-3 text-primary outline-none transition-colors">
+                </div>
+                <!-- Re-auth warning if applicable -->
+                <p id="password-reauth-warning" class="hidden text-xs text-acc-red font-medium">Por seguridad, debes cerrar sesión y volver a entrar antes de poder cambiar tu contraseña.</p>
+                <button id="btn-save-password" class="w-full bg-acc-blue hover:brightness-110 text-primary font-bold py-3 rounded-xl transition-all shadow-sm">
+                    Guardar Contraseña
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

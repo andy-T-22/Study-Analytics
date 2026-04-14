@@ -1,6 +1,7 @@
 import Chart from 'chart.js/auto';
 import { getStyle } from "./utils.js";
 import { openSessionDetails } from "../main.js"; // Depends on main for modal opening
+import { getSubjectColors } from "./data.js";
 
 let chartInstances = {
     eff: null,
@@ -45,7 +46,7 @@ export const updateCharts = () => {
     // Update Top Analytics
     const hours = Math.floor(totalNet / 3600000);
     const minutes = Math.floor((totalNet % 3600000) / 60000);
-    const totalHoursEl = document.getElementById('stat-total-hours');
+    const totalHoursEl = document.getElementById('dash-stat-total-hours');
     if (totalHoursEl) {
         totalHoursEl.textContent = `${hours}h ${minutes}m`;
     }
@@ -151,12 +152,16 @@ const renderSubjectsChart = (map) => {
 
     const labels = Object.keys(map);
     const hours = Object.values(map).map(m => parseFloat((m / 3600000).toFixed(1))); // ms -> hours
+    
+    // Process colors
+    const colorsDict = getSubjectColors();
+    const bgColors = labels.map(lb => colorsDict[lb] || getStyle('--acc-blue'));
 
     chartInstances.sub = new Chart(ctx, {
         type: 'bar',
         data: {
             labels,
-            datasets: [{ label: 'Horas', data: hours, backgroundColor: getStyle('--acc-blue'), borderRadius: 6 }]
+            datasets: [{ label: 'Horas', data: hours, backgroundColor: bgColors, borderRadius: 6 }]
         },
         options: {
             animation: false,

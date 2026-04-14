@@ -10,6 +10,7 @@ import { loadHistory } from './modules/data.js';
 import { toast } from './modules/toasts.js';
 
 import { initDailyGoalPanel, renderDailyPlan } from './modules/dailyGoal.js';
+import { initProfile } from './modules/profile.js';
 
 // --- INIT ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -17,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initThemes();
     initTimer();
     initDailyGoalPanel(); // New
+    initProfile();
     initPWAInstall();
     bindGlobalEvents();
 
@@ -86,13 +88,7 @@ const bindGlobalEvents = () => {
         if (btnSave) btnSave.onclick = () => import('./modules/goalsUI.js').then(m => m.saveNewGoal());
     }
 
-    // Mobile/General Settings
-    document.getElementById('btn-settings-toggle').onclick = () => {
-        document.getElementById('modal-settings').classList.remove('hidden');
-    };
-    document.getElementById('btn-close-settings').onclick = () => {
-        document.getElementById('modal-settings').classList.add('hidden');
-    };
+
 
     // Filters
     const triggerGlobalFilters = () => {

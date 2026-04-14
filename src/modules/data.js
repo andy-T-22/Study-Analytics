@@ -1,7 +1,7 @@
 import { db } from "../services/firebaseConfig.js";
 import { doc, getDoc, setDoc, onSnapshot, collection, query, where, updateDoc } from "firebase/firestore";
 import { renderHistoryList, applyHistoryFilters, updateCharts } from "./charts.js"; // Circular dep potential? We'll see. Ideally signals.
-import { showAlert, showConfirm } from "./utils.js";
+import { showAlert, showConfirm, getStyle } from "./utils.js";
 import { initGoals } from "./goals.js";
 import { renderGoals } from "./goalsUI.js";
 
@@ -11,6 +11,7 @@ window.globalSessionCache = [];
 let subjects = [];
 let methods = [];
 let reasons = [];
+let subjectColors = {};
 let currentUserRef = null;
 
 export const initData = async (user) => {
@@ -38,18 +39,21 @@ const loadPreferences = async () => {
             subjects = data.subjects || defaultSubjects();
             methods = data.methods || defaultMethods();
             reasons = data.reasons || defaultReasons();
+            subjectColors = data.subjectColors || defaultSubjectColors();
         } else {
             // Initial Save
             subjects = defaultSubjects();
             methods = defaultMethods();
             reasons = defaultReasons();
-            await setDoc(docRef, { subjects, methods, reasons });
+            subjectColors = defaultSubjectColors();
+            await setDoc(docRef, { subjects, methods, reasons, subjectColors });
         }
     } else {
         // LocalStorage Strategy (Legacy/Guest)
         subjects = JSON.parse(localStorage.getItem('study_subjects') || JSON.stringify(defaultSubjects()));
         methods = JSON.parse(localStorage.getItem('study_methods') || JSON.stringify(defaultMethods()));
         reasons = JSON.parse(localStorage.getItem('study_reasons') || JSON.stringify(defaultReasons()));
+        subjectColors = JSON.parse(localStorage.getItem('study_subject_colors') || JSON.stringify(defaultSubjectColors()));
     }
     renderAllDropdowns();
 };
@@ -57,6 +61,7 @@ const loadPreferences = async () => {
 const defaultSubjects = () => ["Matemáticas", "Historia", "Programación", "Idioma"];
 const defaultMethods = () => ["Leer", "Resumir", "Ejercicios", "Repaso"];
 const defaultReasons = () => ["Descanso", "Celular", "Llamada", "Comida"];
+const defaultSubjectColors = () => ({"Matemáticas": "#3b82f6", "Historia": "#eab308", "Programación": "#10b981", "Idioma": "#a855f7"});
 
 const savePreferences = async () => {
     if (currentUserRef) {
@@ -64,7 +69,8 @@ const savePreferences = async () => {
             await updateDoc(doc(db, 'user_preferences', currentUserRef.uid), {
                 subjects,
                 methods,
-                reasons
+                reasons,
+                subjectColors
             });
         } catch (e) {
             console.error("Error saving prefs:", e);
@@ -73,6 +79,7 @@ const savePreferences = async () => {
         localStorage.setItem('study_subjects', JSON.stringify(subjects));
         localStorage.setItem('study_methods', JSON.stringify(methods));
         localStorage.setItem('study_reasons', JSON.stringify(reasons));
+        localStorage.setItem('study_subject_colors', JSON.stringify(subjectColors));
     }
     renderAllDropdowns();
 };
@@ -209,7 +216,7 @@ const processDataChange = (docs) => {
 };
 
 // --- DROPDOWNS ---
-const renderAllDropdowns = () => {
+export const renderAllDropdowns = () => {
     // Helper to populate
     const pop = (id, list) => {
         const el = document.getElementById(id);
@@ -229,9 +236,51 @@ const renderAllDropdowns = () => {
     pop('man-subject', subjects);
     pop('man-method', methods);
 
-    // Post Session Entry
-    pop('post-subject', subjects);
-    pop('post-method', methods);
+    // Post Session Entry (Grid format)
+    const popGrid = (gridId, inputId, list, type) => {
+        const grid = document.getElementById(gridId);
+        const hiddenInput = document.getElementById(inputId);
+        if(!grid || !hiddenInput) return;
+        
+        let current = hiddenInput.value;
+        if (!current && list.length > 0) current = list[0];
+        hiddenInput.value = current;
+
+        grid.innerHTML = list.map(item => {
+            const isSelected = item === current;
+            let color = getStyle('--border-color') || '#6B7280';
+            if (type === 'Subjects') color = subjectColors[item] || color;
+            
+            const isMethod = type !== 'Subjects';
+            const selBorder = getStyle('--acc-blue-dark') || '#74a8db';
+
+            const baseClass = isSelected ? 'opacity-100 scale-95 shadow-inner bg-card' : 'opacity-80 hover:opacity-100 hover:scale-[1.02] shadow-sm bg-card';
+            const borderCol = isSelected ? (isMethod ? selBorder : color) : 'var(--border-color)';
+            
+            return `
+            <div data-val="${item}" class="grid-selectable cursor-pointer flex flex-col items-center justify-center p-2 rounded-2xl border-[2px] transition-all ${baseClass}" style="border-color: ${borderCol};">
+                <div class="w-6 h-6 rounded-full mb-1 shadow-sm flex items-center justify-center border-[3px] bg-clip-padding flex-shrink-0" style="border-color: ${isSelected && isMethod ? selBorder : color}; background-color: var(--bg-card);">
+                    ${isMethod && isSelected ? '<div class="h-2 w-2 rounded-full bg-theme"></div>' : `<div class="w-full h-full rounded-full" style="background-color: ${color}"></div>`}
+                </div>
+                <div class="text-[10px] font-bold text-center w-full truncate text-primary">${item}</div>
+            </div>
+            `;
+        }).join('');
+
+        grid.querySelectorAll('.grid-selectable').forEach(el => {
+            el.onclick = () => {
+                const newVal = el.getAttribute('data-val');
+                if(hiddenInput.value !== newVal) {
+                    hiddenInput.value = newVal;
+                    hiddenInput.dispatchEvent(new Event('change'));
+                }
+                popGrid(gridId, inputId, list, type);
+            };
+        });
+    };
+
+    popGrid('post-subject', 'post-subject-input', subjects, 'Subjects');
+    popGrid('post-method', 'post-method-input', methods, 'Methods');
 
     // Detail Edit
     pop('detail-subject', subjects);
@@ -311,99 +360,184 @@ const closeManager = () => {
     currentManagerType = null;
 };
 
-const renderManagerList = () => {
-    let listData = [];
-    if (currentManagerType === 'Subjects') listData = subjects;
-    else if (currentManagerType === 'Methods') listData = methods;
-    else if (currentManagerType === 'Reasons') listData = reasons;
+export const renderAllManagers = () => {
+    // Only render if containers exist
+    if (document.getElementById('inline-manager-subjects')) {
+        renderManagerList('Subjects', 'inline-manager-subjects');
+    }
+    if (document.getElementById('inline-manager-reasons')) {
+        renderManagerList('Reasons', 'inline-manager-reasons');
+    }
+    if (document.getElementById('inline-manager-methods')) {
+        renderManagerList('Methods', 'inline-manager-methods');
+    }
+};
 
-    const container = document.getElementById('manager-list');
+const renderManagerList = (overrideType, containerId) => {
+    const type = overrideType || currentManagerType;
+    const cid = containerId || 'manager-list';
+    
+    let listData = [];
+    if (type === 'Subjects') listData = subjects;
+    else if (type === 'Methods') listData = methods;
+    else if (type === 'Reasons') listData = reasons;
+
+    const container = document.getElementById(cid);
+    if (!container) return;
     container.innerHTML = '';
 
     listData.forEach((item, index) => {
         const div = document.createElement('div');
-        div.className = 'manager-item';
+        
+        let color = getStyle('--border-color') || '#6B7280';
+        let isSubject = type === 'Subjects';
+        if (isSubject) {
+            color = subjectColors[item] || '#6B7280';
+        }
+
+        div.className = 'manager-item flex flex-col items-center justify-center p-4 rounded-[2rem] border-[3px] transition-all group aspect-square shadow-sm relative hover:scale-[1.02] active:scale-95 cursor-default bg-card';
+        // Add specific class for non-subjects to avoid grid blowout if parent container is not a grid
+        if(!document.getElementById(cid).classList.contains('grid')) {
+             document.getElementById(cid).classList.add('grid', 'grid-cols-2', 'md:grid-cols-3', 'gap-4');
+             document.getElementById(cid).classList.remove('space-y-3');
+        }
+
+        div.style.borderColor = color;
+        div.style.backgroundColor = isSubject ? `${color}15` : 'transparent';
+        
         div.innerHTML = `
-            <input type="text" value="${item}" readonly class="text-primary text-sm bg-transparent" id="man-input-${index}">
-            <div class="flex items-center gap-2 ml-2">
-                <button class="btn-edit w-8 h-8 rounded-full hover:bg-blue-50 text-acc-blue-dark flex items-center justify-center transition-colors">
-                    <i class="fas fa-pencil-alt text-xs"></i>
+            <div class="absolute top-2 right-2 flex gap-1 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
+                ${isSubject ? `
+                <label class="btn-color w-7 h-7 rounded-full text-card flex items-center justify-center transition-transform hover:scale-110 shadow-sm border border-transparent hover:border-black/20 cursor-pointer relative overflow-hidden" title="Elegir Color" style="background-color: ${color}">
+                    <i class="fas fa-palette text-[10px]"></i>
+                    <input type="color" value="${color}" class="absolute -top-4 -left-4 w-16 h-16 opacity-0 cursor-pointer">
+                </label>
+                ` : ''}
+                <button class="btn-edit w-7 h-7 rounded-full bg-main/80 hover:bg-blue-50 text-acc-blue-dark flex items-center justify-center transition-all shadow-sm">
+                    <i class="fas fa-pencil-alt text-[10px]"></i>
                 </button>
-                <button class="btn-del w-8 h-8 rounded-full hover:bg-red-50 text-red-500 flex items-center justify-center transition-colors">
-                    <i class="fas fa-trash-alt text-xs"></i>
+                <button class="btn-del w-7 h-7 rounded-full bg-main/80 hover:bg-red-50 text-red-500 flex items-center justify-center transition-all shadow-sm">
+                    <i class="fas fa-trash-alt text-[10px]"></i>
                 </button>
             </div>
+            <div class="w-12 h-12 rounded-full mb-3 shadow-[0_4px_10px_rgba(0,0,0,0.15)] ${isSubject ? 'cursor-pointer' : ''} flex items-center justify-center bg-card border-[4px] bg-clip-padding flex-shrink-0" style="border-color: ${color}">
+                <div class="w-full h-full rounded-full" style="background-color: ${color}"></div>
+            </div>
+            <input type="text" value="${item}" readonly class="text-sm font-bold bg-transparent text-center w-full outline-none mt-auto px-1 truncate" id="man-input-${type}-${index}" style="color: ${isSubject ? color : 'var(--text-primary)'}; min-height: 20px;">
         `;
 
-        // Bind events
-        div.querySelector('.btn-edit').onclick = () => enableEdit(index, div.querySelector('button i'));
-        div.querySelector('.btn-del').onclick = () => deleteItem(index);
+        if (isSubject) {
+            // Tie color picker to huge center circle
+            const centerCircle = div.querySelector('.w-12.h-12');
+            centerCircle.onclick = () => div.querySelector('input[type="color"]').click();
 
-        // Enter key save
-        const input = div.querySelector('input');
-        input.onkeydown = (e) => { if (e.key === 'Enter') saveEdit(index, input.value); };
+            // Color picker binding
+            const colorInput = div.querySelector('input[type="color"]');
+            colorInput.onchange = (e) => {
+                subjectColors[item] = e.target.value;
+                savePreferences().then(() => {
+                    renderAllManagers();
+                    if (currentManagerType === 'Subjects') renderManagerList('Subjects', 'manager-list');
+                });
+            };
+        }
+
+        div.querySelector('.btn-edit').onclick = () => enableEdit(type, index, div.querySelector('.btn-edit i'));
+        div.querySelector('.btn-del').onclick = () => deleteItem(type, index);
+        const input = div.querySelector('input[type="text"]');
+        input.onkeydown = (e) => { if (e.key === 'Enter') saveEdit(type, index, input.value); };
+        input.onblur = () => { if (!input.readOnly) saveEdit(type, index, input.value); };
 
         container.appendChild(div);
     });
 };
 
-const enableEdit = (index, iconEl) => {
-    const input = document.getElementById(`man-input-${index}`);
-    if (input.readOnly) {
+const enableEdit = (type, index, iconEl) => {
+    const input = document.getElementById(`man-input-${type}-${index}`);
+    if (input && input.readOnly) {
         input.readOnly = false;
         input.focus();
-        input.select(); // Select all text to allow instant overwrite
+        input.select();
         iconEl.className = "fas fa-check text-green-500";
-        // Override click to save
-        iconEl.parentElement.onclick = () => saveEdit(index, input.value);
+        iconEl.parentElement.onclick = () => saveEdit(type, index, input.value);
     }
 };
 
-const saveEdit = (index, newValue) => {
+const saveEdit = (type, index, newValue) => {
     let listData = null;
-    if (currentManagerType === 'Subjects') listData = subjects;
-    else if (currentManagerType === 'Methods') listData = methods;
-    else if (currentManagerType === 'Reasons') listData = reasons;
+    let oldVal = null;
+    if (type === 'Subjects') {
+        listData = subjects;
+        oldVal = subjects[index];
+    }
+    else if (type === 'Methods') listData = methods;
+    else if (type === 'Reasons') listData = reasons;
 
-    if (newValue.trim()) {
-        listData[index] = newValue.trim();
-        savePreferences();
-        renderManagerList();
+    const trimmed = newValue.trim();
+    if (trimmed) {
+        if (type === 'Subjects' && oldVal !== trimmed) {
+            subjectColors[trimmed] = subjectColors[oldVal] || '#6B7280';
+            delete subjectColors[oldVal];
+        }
+        listData[index] = trimmed;
     } else {
+        if (type === 'Subjects') {
+             delete subjectColors[listData[index]];
+        }
         listData.splice(index, 1);
-        savePreferences();
-        renderManagerList();
     }
-};
-
-const deleteItem = (index) => {
-    let listData = null;
-    if (currentManagerType === 'Subjects') listData = subjects;
-    else if (currentManagerType === 'Methods') listData = methods;
-    else if (currentManagerType === 'Reasons') listData = reasons;
-
-    showConfirm("Confirmar", "¿Eliminar este elemento?", () => {
-        listData.splice(index, 1);
-        savePreferences();
-        renderManagerList();
+    
+    savePreferences().then(() => {
+        renderAllManagers();
+        if (currentManagerType === type) renderManagerList(type, 'manager-list');
     });
 };
 
-const addManagerItem = () => {
+const deleteItem = (type, index) => {
     let listData = null;
-    if (currentManagerType === 'Subjects') listData = subjects;
-    else if (currentManagerType === 'Methods') listData = methods;
-    else if (currentManagerType === 'Reasons') listData = reasons;
+    if (type === 'Subjects') listData = subjects;
+    else if (type === 'Methods') listData = methods;
+    else if (type === 'Reasons') listData = reasons;
 
-    listData.push("Nuevo Elemento");
+    showConfirm("Confirmar", "¿Eliminar este elemento?", () => {
+        if (type === 'Subjects') {
+            delete subjectColors[listData[index]];
+        }
+        listData.splice(index, 1);
+        savePreferences().then(() => {
+            renderAllManagers();
+            if (currentManagerType === type) renderManagerList(type, 'manager-list');
+        });
+    });
+};
+
+export const addManagerItem = (overrideType) => {
+    const type = overrideType || currentManagerType;
+    let listData = null;
+    if (type === 'Subjects') listData = subjects;
+    else if (type === 'Methods') listData = methods;
+    else if (type === 'Reasons') listData = reasons;
+
+    let newItem = "Nuevo Elemento";
+    if (listData.includes(newItem)) {
+        newItem = "Nuevo Elemento " + Math.floor(Math.random() * 100);
+    }
+
+    if (type === 'Subjects') {
+        const palette = ['#3b82f6', '#eab308', '#10b981', '#a855f7', '#ef4444', '#f97316', '#06b6d4', '#8b5cf6', '#ec4899', '#64748b', '#2dd4bf', '#fb7185'];
+        subjectColors[newItem] = palette[Math.floor(Math.random() * palette.length)];
+    }
+
+    listData.push(newItem);
     savePreferences().then(() => {
-        renderManagerList();
-        // Auto-edit last item
+        renderAllManagers();
+        if (currentManagerType === type) renderManagerList(type, 'manager-list');
+        
+        // Auto-edit
         const idx = listData.length - 1;
-        const input = document.getElementById(`man-input-${idx}`);
+        const input = document.getElementById(`man-input-${type}-${idx}`);
         if (input) {
-            // Find the edit button for this index
-            const btn = input.nextElementSibling.querySelector('button');
+            const btn = input.nextElementSibling?.querySelector('.btn-edit');
             if (btn) btn.click();
             input.value = "";
             input.placeholder = "Nuevo Elemento";
@@ -414,4 +548,5 @@ const addManagerItem = () => {
 export const getSubjects = () => subjects;
 export const getMethods = () => methods;
 export const getReasons = () => reasons;
+export const getSubjectColors = () => subjectColors;
 
