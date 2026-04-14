@@ -267,6 +267,23 @@ export const renderAllDropdowns = () => {
             `;
         }).join('');
 
+        grid.innerHTML += `
+        <div class="grid-add cursor-pointer flex flex-col items-center justify-center p-2 rounded-2xl border-[2px] border-dashed border-theme opacity-60 hover:opacity-100 transition-all shadow-sm bg-card/50">
+            <div class="w-6 h-6 rounded-full mb-1 flex items-center justify-center flex-shrink-0 bg-transparent text-secondary">
+                <i class="fas fa-plus text-[12px]"></i>
+            </div>
+            <div class="text-[10px] font-bold text-center w-full truncate text-secondary">Nuevo</div>
+        </div>
+        `;
+
+        const addBtn = grid.querySelector('.grid-add');
+        if (addBtn) {
+            addBtn.onclick = () => {
+                openManager(type);
+                addManagerItem(type);
+            };
+        }
+
         grid.querySelectorAll('.grid-selectable').forEach(el => {
             el.onclick = () => {
                 const newVal = el.getAttribute('data-val');
@@ -395,10 +412,10 @@ const renderManagerList = (overrideType, containerId) => {
             color = subjectColors[item] || '#6B7280';
         }
 
-        div.className = 'manager-item flex flex-col items-center justify-center p-4 rounded-[2rem] border-[3px] transition-all group aspect-square shadow-sm relative hover:scale-[1.02] active:scale-95 cursor-default bg-card';
+        div.className = 'manager-item flex flex-col items-center justify-center p-3 rounded-2xl border-[3px] transition-all group aspect-square shadow-sm relative hover:scale-[1.02] active:scale-95 cursor-default bg-card';
         // Add specific class for non-subjects to avoid grid blowout if parent container is not a grid
         if(!document.getElementById(cid).classList.contains('grid')) {
-             document.getElementById(cid).classList.add('grid', 'grid-cols-2', 'md:grid-cols-3', 'gap-4');
+             document.getElementById(cid).classList.add('grid', 'grid-cols-2', 'md:grid-cols-3', 'lg:grid-cols-4', 'gap-3');
              document.getElementById(cid).classList.remove('space-y-3');
         }
 
@@ -420,15 +437,15 @@ const renderManagerList = (overrideType, containerId) => {
                     <i class="fas fa-trash-alt text-[10px]"></i>
                 </button>
             </div>
-            <div class="w-12 h-12 rounded-full mb-3 shadow-[0_4px_10px_rgba(0,0,0,0.15)] ${isSubject ? 'cursor-pointer' : ''} flex items-center justify-center bg-card border-[4px] bg-clip-padding flex-shrink-0" style="border-color: ${color}">
+            <div class="w-10 h-10 rounded-full mb-2 shadow-[0_4px_10px_rgba(0,0,0,0.15)] ${isSubject ? 'cursor-pointer' : ''} flex items-center justify-center bg-card border-[4px] bg-clip-padding flex-shrink-0" style="border-color: ${color}">
                 <div class="w-full h-full rounded-full" style="background-color: ${color}"></div>
             </div>
-            <input type="text" value="${item}" readonly class="text-sm font-bold bg-transparent text-center w-full outline-none mt-auto px-1 truncate" id="man-input-${type}-${index}" style="color: ${isSubject ? color : 'var(--text-primary)'}; min-height: 20px;">
+            <input type="text" value="${item}" readonly class="text-xs font-bold bg-transparent text-center w-full outline-none mt-auto px-1 truncate" id="man-input-${type}-${index}" style="color: ${isSubject ? color : 'var(--text-primary)'}; min-height: 20px;">
         `;
 
         if (isSubject) {
             // Tie color picker to huge center circle
-            const centerCircle = div.querySelector('.w-12.h-12');
+            const centerCircle = div.querySelector('.w-10.h-10');
             centerCircle.onclick = () => div.querySelector('input[type="color"]').click();
 
             // Color picker binding
@@ -537,7 +554,7 @@ export const addManagerItem = (overrideType) => {
         const idx = listData.length - 1;
         const input = document.getElementById(`man-input-${type}-${idx}`);
         if (input) {
-            const btn = input.nextElementSibling?.querySelector('.btn-edit');
+            const btn = input.parentElement.querySelector('.btn-edit');
             if (btn) btn.click();
             input.value = "";
             input.placeholder = "Nuevo Elemento";

@@ -357,13 +357,17 @@
                             </div>
                         </div>
 
-                        <div class="flex justify-center gap-4">
+                        <div class="flex justify-center gap-2 md:gap-4 flex-wrap">
+                            <button id="btn-cancel-session"
+                                class="bg-card border-2 border-theme hover:bg-red-50 text-red-500 font-bold px-5 py-4 rounded-2xl transition-all shadow-sm flex items-center justify-center order-first md:order-none" title="Cancelar Sesión">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
                             <button id="btn-pause-session"
-                                class="bg-acc-peach hover:brightness-95 text-primary font-bold px-8 py-4 rounded-2xl transition-transform hover:scale-105 shadow-sm">
+                                class="bg-acc-peach hover:brightness-95 text-primary font-bold px-6 md:px-8 py-4 rounded-2xl transition-transform hover:scale-105 shadow-sm flex-1 md:flex-none">
                                 <i class="fas fa-pause mr-2"></i> Pausar
                             </button>
                             <button id="btn-stop-session"
-                                class="bg-card border-2 border-theme hover:bg-acc-red hover:border-acc-red text-primary font-bold px-8 py-4 rounded-2xl transition-all hover:scale-105 shadow-sm">
+                                class="bg-card border-2 border-theme hover:bg-[var(--acc-red)] hover:border-[var(--acc-red)] hover:text-white text-primary font-bold px-6 md:px-8 py-4 rounded-2xl transition-all hover:scale-105 shadow-sm flex-1 md:flex-none">
                                 <i class="fas fa-stop mr-2"></i> Terminar
                             </button>
                         </div>
@@ -1047,8 +1051,11 @@
     <!-- MODAL: POST SESSION CONFIG -->
     <div id="modal-post-session"
         class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center hidden backdrop-blur-md">
-        <div class="bg-card w-full max-w-md mx-4 rounded-3xl shadow-2xl border border-theme p-8 animate-slide-up">
-            <h3 class="text-2xl font-black text-primary mb-2 text-center">Sesión Finalizada</h3>
+        <div class="bg-card w-full max-w-md mx-4 rounded-3xl shadow-2xl border border-theme p-8 animate-slide-up relative">
+            <button id="btn-back-post-session" class="absolute top-6 left-6 text-secondary hover:text-primary transition-colors focus:outline-none" title="Volver al Cronómetro">
+                <i class="fas fa-arrow-left text-xl"></i>
+            </button>
+            <h3 class="text-2xl font-black text-primary mb-2 text-center mt-2">Sesión Finalizada</h3>
             <p class="text-secondary text-center mb-6 text-sm">Completa los datos de tu sesión.</p>
 
             <div class="space-y-5">

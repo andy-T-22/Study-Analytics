@@ -80,6 +80,9 @@ export const initProfile = () => {
 
     const btnAddReaInline = document.getElementById('btn-add-reason-inline');
     if (btnAddReaInline) btnAddReaInline.addEventListener('click', () => addManagerItem('Reasons'));
+
+    const btnAddMethodInline = document.getElementById('btn-add-method-inline');
+    if (btnAddMethodInline) btnAddMethodInline.addEventListener('click', () => addManagerItem('Methods'));
 };
 
 const renderAccountInfo = () => {

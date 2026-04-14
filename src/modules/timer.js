@@ -1,7 +1,7 @@
 import { db } from "../services/firebaseConfig.js";
 import { collection, addDoc } from "firebase/firestore";
 import { getCurrentUser } from "./auth.js";
-import { formatTime, showAlert, getStyle } from "./utils.js";
+import { formatTime, showAlert, showConfirm, getStyle } from "./utils.js";
 import { loadHistory, getSubjects, getMethods, renderAllDropdowns } from "./data.js";
 import { getFeedback } from "./feedback.js";
 import { renderDailyPlan } from "./dailyGoal.js"; // New Import
@@ -61,6 +61,22 @@ export const initTimer = () => {
     document.getElementById('btn-start-session').onclick = startSession;
     document.getElementById('btn-pause-session').onclick = promptPause;
     document.getElementById('btn-stop-session').onclick = stopSession;
+    const btnCancelSession = document.getElementById('btn-cancel-session');
+    if (btnCancelSession) {
+        btnCancelSession.onclick = () => {
+            showConfirm("Cancelar Sesión", "¿Descartar esta sesión sin guardar nada?", () => {
+                clearInterval(timerInterval);
+                faviconAnimator.stop();
+                localStorage.removeItem('study_session');
+                activeSession = null;
+                dom.active().classList.add('hidden');
+                dom.setup().classList.remove('hidden');
+                import('./dailyGoal.js').then(m => m.renderDailyPlan());
+                dom.display().textContent = "00:00";
+                document.title = "Study Meter";
+            });
+        };
+    }
 
     // Pause Logic Buttons
     // Pause Logic Buttons (Delegation for dynamic items)
@@ -97,6 +113,29 @@ export const initTimer = () => {
 
     // Post Session Resume
     if (dom.btnPostContinue()) dom.btnPostContinue().onclick = completeSession;
+
+    // Back to Timer from Post Session
+    const btnBackPost = document.getElementById('btn-back-post-session');
+    if (btnBackPost) {
+        btnBackPost.onclick = () => {
+            dom.postModal().classList.add('hidden');
+            if (activeSession && activeSession.status === 'post-session') {
+                const now = Date.now();
+                activeSession.interruptions.push({
+                    start: activeSession.postSessionStart,
+                    end: now,
+                    duration: now - activeSession.postSessionStart,
+                    reason: 'post-session'
+                });
+                activeSession.status = 'running';
+                delete activeSession.postSessionStart;
+                saveLocal();
+            }
+            // Resume timer visuals
+            startLoop();
+            faviconAnimator.start();
+        };
+    }
 
     // Event listener for remote updates from profile.js
     window.addEventListener('app_settings_updated', () => {
@@ -275,6 +314,8 @@ const resumeSession = () => {
 
 const stopSession = async () => {
     clearInterval(timerInterval);
+    activeSession.status = 'post-session';
+    activeSession.postSessionStart = Date.now();
     faviconAnimator.stop();
     populatePostSessionModal();
     dom.postModal().classList.remove('hidden');
@@ -322,7 +363,7 @@ const completeSession = async () => {
 };
 
 const finalizeSessionProcessing = async () => {
-    const now = Date.now();
+    const now = activeSession.postSessionStart ? activeSession.postSessionStart : Date.now();
     let totalPaused = activeSession.interruptions.reduce((acc, i) => acc + (i.duration || 0), 0);
     const gross = now - activeSession.startTime;
     const net = gross - totalPaused;
