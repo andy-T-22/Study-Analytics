@@ -85,6 +85,7 @@ const loadPreferences = async () => {
     }
 
     renderAllDropdowns();
+    renderAllManagers();
 
     if (!isOnboarded) {
         showOnboardingUI();
@@ -215,7 +216,7 @@ const defaultMethods = () => ["Leer", "Resumir", "Ejercicios", "Repaso"];
 const defaultReasons = () => ["Descanso", "Celular", "Llamada", "Comida"];
 const defaultSubjectColors = () => ({"Matemáticas": "#3b82f6", "Historia": "#eab308", "Programación": "#10b981", "Idioma": "#a855f7"});
 
-const savePreferences = async () => {
+const savePreferences = async (options = {}) => {
     if (currentUserRef) {
         try {
             await updateDoc(doc(db, 'user_preferences', currentUserRef.uid), {
@@ -234,6 +235,10 @@ const savePreferences = async () => {
         localStorage.setItem('study_subject_colors', JSON.stringify(subjectColors));
     }
     renderAllDropdowns();
+    renderAllManagers();
+    if (typeof options.afterRender === 'function') {
+        options.afterRender();
+    }
 };
 
 // --- HISTORY LOADING ---
@@ -509,7 +514,7 @@ const setupManagerUI = () => {
 
     // Close Button
     document.getElementById('btn-close-manager').onclick = closeManager;
-    document.getElementById('btn-add-manager-item').onclick = addManagerItem;
+    document.getElementById('btn-add-manager-item').onclick = () => addManagerItem();
 };
 
 const openManager = (type) => {
@@ -611,24 +616,39 @@ const renderManagerList = (overrideType, containerId) => {
             };
         }
 
-        div.querySelector('.btn-edit').onclick = () => enableEdit(type, index, div.querySelector('.btn-edit i'));
-        div.querySelector('.btn-del').onclick = () => deleteItem(type, index);
+        const editBtn = div.querySelector('.btn-edit');
         const input = div.querySelector('input[type="text"]');
+
+        editBtn.onclick = () => {
+            if (input.readOnly) {
+                enableEdit(type, index, input, editBtn);
+            } else {
+                saveEdit(type, index, input.value);
+            }
+        };
+        div.querySelector('.btn-del').onclick = () => deleteItem(type, index);
         input.onkeydown = (e) => { if (e.key === 'Enter') saveEdit(type, index, input.value); };
-        input.onblur = () => { if (!input.readOnly) saveEdit(type, index, input.value); };
+        input.onblur = () => {
+            if (!input.readOnly) {
+                const active = document.activeElement;
+                if (active !== editBtn && active !== editBtn.querySelector('i')) {
+                    saveEdit(type, index, input.value);
+                }
+            }
+        };
 
         container.appendChild(div);
     });
 };
 
-const enableEdit = (type, index, iconEl) => {
-    const input = document.getElementById(`man-input-${type}-${index}`);
+const enableEdit = (type, index, input, editBtn) => {
     if (input && input.readOnly) {
+        input.removeAttribute('readonly');
         input.readOnly = false;
         input.focus();
         input.select();
-        iconEl.className = "fas fa-check text-green-500";
-        iconEl.parentElement.onclick = () => saveEdit(type, index, input.value);
+        const icon = editBtn.querySelector('i');
+        if (icon) icon.className = "fas fa-check text-green-500";
     }
 };
 
@@ -681,15 +701,24 @@ const deleteItem = (type, index) => {
 };
 
 export const addManagerItem = (overrideType) => {
+    if (overrideType && overrideType.type) {
+        overrideType = undefined;
+    }
     const type = overrideType || currentManagerType;
+    if (!type) return;
+    currentManagerType = type;
+
     let listData = null;
     if (type === 'Subjects') listData = subjects;
     else if (type === 'Methods') listData = methods;
     else if (type === 'Reasons') listData = reasons;
 
-    let newItem = "Nuevo Elemento";
-    if (listData.includes(newItem)) {
-        newItem = "Nuevo Elemento " + Math.floor(Math.random() * 100);
+    const baseName = type === 'Subjects' ? 'Nueva Materia' : type === 'Methods' ? 'Nuevo Método' : 'Nuevo Elemento';
+    let newItem = baseName;
+    let suffix = 1;
+    while (listData.includes(newItem)) {
+        newItem = `${baseName} ${suffix}`;
+        suffix += 1;
     }
 
     if (type === 'Subjects') {
@@ -698,20 +727,36 @@ export const addManagerItem = (overrideType) => {
     }
 
     listData.push(newItem);
-    savePreferences().then(() => {
-        renderAllManagers();
-        if (currentManagerType === type) renderManagerList(type, 'manager-list');
-        
-        // Auto-edit
+
+    const focusNewInput = () => {
         const idx = listData.length - 1;
-        const input = document.getElementById(`man-input-${type}-${idx}`);
-        if (input) {
-            const btn = input.parentElement.querySelector('.btn-edit');
-            if (btn) btn.click();
-            input.value = "";
-            input.placeholder = "Nuevo Elemento";
+        const managerContainer = document.getElementById('manager-list');
+        let input = null;
+        if (managerContainer) {
+            input = managerContainer.querySelector(`#man-input-${type}-${idx}`);
         }
-    });
+        if (!input) {
+            input = document.querySelector(`#man-input-${type}-${idx}`);
+        }
+
+        if (input) {
+            input.removeAttribute('readonly');
+            input.readOnly = false;
+            input.placeholder = type === 'Subjects' ? 'Nombre de la materia' : type === 'Methods' ? 'Nombre del método' : 'Ingrese texto';
+            const icon = input.parentElement.querySelector('.btn-edit i');
+            if (icon) icon.className = 'fas fa-check text-green-500';
+            setTimeout(() => {
+                input.focus();
+                input.select();
+            }, 0);
+        }
+    };
+
+    renderAllManagers();
+    if (currentManagerType === type) renderManagerList(type, 'manager-list');
+    setTimeout(focusNewInput, 0);
+
+    savePreferences({ afterRender: () => setTimeout(focusNewInput, 0) });
 };
 
 export const getSubjects = () => subjects;

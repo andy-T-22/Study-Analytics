@@ -370,7 +370,7 @@ const setAppUser = (user) => {
     const appContainer = document.getElementById('app-container');
     appContainer.style.display = 'flex'; // Ensure flex layout
 
-    const displayName = user ? (user.email.split('@')[0]) : 'Invitado';
+    const displayName = user ? (user.displayName || user.email.split('@')[0]) : 'Invitado';
     const initial = displayName.charAt(0).toUpperCase();
 
     // Header Info
@@ -382,7 +382,7 @@ const setAppUser = (user) => {
 
     // Inside Profile Modal
     const overviewName = document.getElementById('overview-name');
-    if (overviewName) overviewName.textContent = user ? user.email : 'Modo Invitado';
+    if (overviewName) overviewName.textContent = displayName;
     
     const overviewAvatar = document.getElementById('overview-avatar');
     if (overviewAvatar) overviewAvatar.textContent = initial;
