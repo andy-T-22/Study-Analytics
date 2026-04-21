@@ -360,6 +360,13 @@ export const initAuth = () => {
             document.getElementById('app-container').style.display = 'none';
             showMainForm();
         }
+
+        // Esconder splash-screen de la aplicación de modo seguro tras procesar todo.
+        // Un leve retardo asegura que el navegador primero pinte la UI final (ej. botones login o el dashboard).
+        setTimeout(() => {
+            const splash = document.getElementById('splash-screen');
+            if (splash) splash.classList.add('fade-out');
+        }, 300);
     });
 };
 

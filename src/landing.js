@@ -1,8 +1,20 @@
 import './style.css';
 import Chart from 'chart.js/auto';
 import './modules/favicon.js';
+import { auth } from './services/firebaseConfig.js';
+import { onAuthStateChanged } from 'firebase/auth';
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Redirección silenciosa si ya hay sesión iniciada
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            window.location.replace('/app.html');
+        } else {
+            // Mostrar la landing page
+            document.body.classList.remove('opacity-0');
+        }
+    });
+
     // Render mock chart for landing page
     const ctx = document.getElementById('landing-mock-chart')?.getContext('2d');
     if (ctx) {

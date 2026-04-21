@@ -21,12 +21,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     initProfile();
     initPWAInstall();
     bindGlobalEvents();
-
-    // Fade out splash screen after small delay
-    setTimeout(() => {
-        const splash = document.getElementById('splash-screen');
-        if (splash) splash.classList.add('fade-out');
-    }, 1200);
 });
 
 // --- PWA INSTALLATION ---
