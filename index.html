@@ -7,48 +7,90 @@
     <link rel="icon" type="image/png" href="/favicon-custom.png" />
     <title>Study Meter - Domina tu tiempo, alcanza tus metas</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800;900&display=swap"
+        rel="stylesheet" />
     <meta name="theme-color" content="#fcfbf7" />
-    <meta name="description" content="Study Meter es tu compañero para transformar la disciplina en un hábito automático." />
+    <meta name="description"
+        content="Study Meter es tu compañero para transformar la disciplina en un hábito automático." />
 
     <script type="module" src="/src/landing.js"></script>
     <style>
-        html { scroll-behavior: smooth; }
-        body { font-family: 'Inter', sans-serif; overflow-x: hidden; }
-        .mono { font-family: 'JetBrains Mono', monospace; }
-        
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
         .fade-in-up {
             animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             opacity: 0;
             transform: translateY(20px);
         }
-        
-        .delay-100 { animation-delay: 100ms; }
-        .delay-200 { animation-delay: 200ms; }
-        .delay-300 { animation-delay: 300ms; }
-        .delay-400 { animation-delay: 400ms; }
-        
-        @keyframes fadeInUp {
-            to { opacity: 1; transform: translateY(0); }
+
+        .delay-100 {
+            animation-delay: 100ms;
         }
-        
+
+        .delay-200 {
+            animation-delay: 200ms;
+        }
+
+        .delay-300 {
+            animation-delay: 300ms;
+        }
+
+        .delay-400 {
+            animation-delay: 400ms;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .glass-panel {
             background: var(--bg-glass, rgba(255, 255, 255, 0.6));
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--border-color);
         }
-        
-        .float-slow { animation: float 6s ease-in-out infinite; }
-        .float-fast { animation: float 4.5s ease-in-out infinite; }
-        .float-delayed { animation: float 5s ease-in-out infinite 2s; }
-        
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-15px); }
-            100% { transform: translateY(0px); }
+
+        .float-slow {
+            animation: float 6s ease-in-out infinite;
         }
-        
+
+        .float-fast {
+            animation: float 4.5s ease-in-out infinite;
+        }
+
+        .float-delayed {
+            animation: float 5s ease-in-out infinite 2s;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-15px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
         .bg-blob {
             position: absolute;
             filter: blur(80px);
@@ -57,10 +99,15 @@
             border-radius: 50%;
             animation: blob-bounce 10s infinite alternate;
         }
-        
+
         @keyframes blob-bounce {
-            0% { transform: scale(1) translate(0, 0); }
-            100% { transform: scale(1.1) translate(20px, -20px); }
+            0% {
+                transform: scale(1) translate(0, 0);
+            }
+
+            100% {
+                transform: scale(1.1) translate(20px, -20px);
+            }
         }
 
         /* Heatmap Grid */
@@ -69,22 +116,42 @@
             grid-template-columns: repeat(7, 1fr);
             gap: 4px;
         }
-        .heat-level-0 { background-color: #f1f5f9; } /* bg-main approach */
-        .heat-level-1 { background-color: #bfdbfe; }
-        .heat-level-2 { background-color: #60a5fa; }
-        .heat-level-3 { background-color: #3b82f6; }
-        .heat-level-4 { background-color: #1d4ed8; }
+
+        .heat-level-0 {
+            background-color: #f1f5f9;
+        }
+
+        /* bg-main approach */
+        .heat-level-1 {
+            background-color: #bfdbfe;
+        }
+
+        .heat-level-2 {
+            background-color: #60a5fa;
+        }
+
+        .heat-level-3 {
+            background-color: #3b82f6;
+        }
+
+        .heat-level-4 {
+            background-color: #1d4ed8;
+        }
     </style>
 </head>
 
 <body class="bg-main text-primary min-h-screen relative transition-opacity duration-300 opacity-0" data-theme="pastel">
-    
+
     <!-- Background Accents -->
     <div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         <div class="bg-blob bg-acc-blue w-[400px] h-[400px] top-[-100px] left-[-100px]"></div>
-        <div class="bg-blob bg-acc-peach w-[300px] h-[300px] top-[20%] right-[-50px]" style="animation-delay: 2s;"></div>
-        <div class="bg-blob bg-acc-lavender w-[500px] h-[500px] bottom-[-150px] left-[20%]" style="animation-delay: 4s;"></div>
-        <div class="absolute inset-0 opacity-[0.03]" style="background-image: radial-gradient(var(--text-primary) 2px, transparent 2px); background-size: 32px 32px;"></div>
+        <div class="bg-blob bg-acc-peach w-[300px] h-[300px] top-[20%] right-[-50px]" style="animation-delay: 2s;">
+        </div>
+        <div class="bg-blob bg-acc-lavender w-[500px] h-[500px] bottom-[-150px] left-[20%]"
+            style="animation-delay: 4s;"></div>
+        <div class="absolute inset-0 opacity-[0.03]"
+            style="background-image: radial-gradient(var(--text-primary) 2px, transparent 2px); background-size: 32px 32px;">
+        </div>
     </div>
 
     <!-- Navigation -->
@@ -94,7 +161,8 @@
             <span class="font-bold text-lg tracking-tight">Study Meter</span>
         </div>
         <div>
-            <a href="/app.html" class="font-bold text-sm bg-acc-blue text-primary px-5 py-2.5 rounded-full shadow-sm hover:brightness-95 transition-transform hover:scale-105 inline-flex items-center gap-2">
+            <a href="/app.html"
+                class="font-bold text-sm bg-acc-blue text-primary px-5 py-2.5 rounded-full shadow-sm hover:brightness-95 transition-transform hover:scale-105 inline-flex items-center gap-2">
                 Ingresar <i class="fas fa-arrow-right text-xs"></i>
             </a>
         </div>
@@ -102,42 +170,62 @@
 
     <!-- Hero Section -->
     <main class="relative z-10 max-w-7xl mx-auto px-6 pt-12 md:pt-20 pb-20 flex flex-col items-center text-center">
-        <h1 class="text-5xl md:text-7xl font-black tracking-tighter mb-6 leading-tight fade-in-up delay-100 max-w-5xl text-primary">
-            Domina tu tiempo,<br/>
-            <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500">alcanza tus metas.</span>
+        <h1
+            class="text-5xl md:text-7xl font-black tracking-tighter mb-6 leading-tight fade-in-up delay-100 max-w-5xl text-primary">
+            Domina tu tiempo,<br />
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500">alcanza tus
+                metas.</span>
         </h1>
-        
+
         <p class="text-lg md:text-xl text-secondary max-w-3xl mb-10 leading-relaxed fade-in-up delay-200">
-            Study Meter no es solo un cronómetro de estudio; es tu compañero para transformar la disciplina en un hábito automático. Desarrollado por estudiantes para estudiantes, entendemos la importancia de cada minuto invertido.
+            Study Meter no es solo un cronómetro de estudio; es tu compañero para transformar la disciplina en un hábito
+            automático. Desarrollado por estudiantes para estudiantes, entendemos la importancia de cada minuto
+            invertido, Study Meter te permite registrar el tiempo y la intensidad de tus sesiones de estudio. Al
+            finalizar esos datos se veran reflejados en graficos estadisticos para que puedas sacar conclusiones y
+            mejorar tus sesiones de estudio.
         </p>
-        
+
         <div class="fade-in-up delay-300">
-            <a href="/app.html" class="bg-card text-primary border-2 border-theme hover:border-acc-blue hover:shadow-lg font-extrabold px-8 py-4 rounded-2xl text-lg transition-all hover:-translate-y-1 inline-flex items-center gap-3">
+            <a href="/app.html"
+                class="bg-card text-primary border-2 border-theme hover:border-acc-blue hover:shadow-lg font-extrabold px-8 py-4 rounded-2xl text-lg transition-all hover:-translate-y-1 inline-flex items-center gap-3">
                 Comenzar gratis <i class="fas fa-play text-acc-blue text-sm"></i>
             </a>
         </div>
 
         <!-- Mockup Timer Hero -->
         <div class="w-full mt-20 flex justify-center fade-in-up delay-400 perspective-1000">
-            <div class="glass-panel p-8 rounded-[2.5rem] shadow-2xl w-full max-w-sm flex flex-col items-center float-slow border border-theme">
+            <div
+                class="glass-panel p-8 rounded-[2.5rem] shadow-2xl w-full max-w-sm flex flex-col items-center float-slow border border-theme">
                 <div class="flex justify-between w-full mb-8">
-                    <div class="bg-acc-lavender/40 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-indigo-700">Física Aplicada</div>
-                    <div class="text-primary text-xs font-black bg-acc-peach/30 px-3 py-1.5 rounded-full border border-orange-200"><i class="fas fa-fire text-orange-500"></i> Día 14</div>
+                    <div
+                        class="bg-acc-lavender/40 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-indigo-700">
+                        Física Aplicada</div>
+                    <div
+                        class="text-primary text-xs font-black bg-acc-peach/30 px-3 py-1.5 rounded-full border border-orange-200">
+                        <i class="fas fa-fire text-orange-500"></i> Día 14
+                    </div>
                 </div>
-                
-                <div class="relative w-56 h-56 rounded-full border-[10px] border-bg-main shadow-inner flex items-center justify-center bg-card mb-8">
+
+                <div
+                    class="relative w-56 h-56 rounded-full border-[10px] border-bg-main shadow-inner flex items-center justify-center bg-card mb-8">
                     <svg class="absolute inset-0 w-full h-full -rotate-90">
-                        <circle cx="50%" cy="50%" r="46%" stroke="currentColor" stroke-width="10" fill="none" class="text-acc-blue" stroke-dasharray="320" stroke-dashoffset="80" stroke-linecap="round"></circle>
+                        <circle cx="50%" cy="50%" r="46%" stroke="currentColor" stroke-width="10" fill="none"
+                            class="text-acc-blue" stroke-dasharray="320" stroke-dashoffset="80" stroke-linecap="round">
+                        </circle>
                     </svg>
                     <div class="flex flex-col items-center">
                         <div class="mono text-5xl font-black text-primary tracking-tighter">60:00</div>
-                        <div class="text-xs text-secondary font-bold uppercase tracking-widest mt-1">Enfoque Profundo</div>
+                        <div class="text-xs text-secondary font-bold uppercase tracking-widest mt-1">Enfoque Profundo
+                        </div>
                     </div>
                 </div>
-                
+
                 <div class="flex gap-4 w-full">
-                    <button class="flex-1 bg-main text-secondary border border-theme py-4 rounded-2xl font-bold text-sm shadow-sm flex justify-center items-center hover:bg-gray-50"><i class="fas fa-times"></i></button>
-                    <button class="flex-[3] bg-acc-peach text-primary font-bold py-4 rounded-2xl shadow-sm text-sm hover:brightness-95">PAUSAR</button>
+                    <button
+                        class="flex-1 bg-main text-secondary border border-theme py-4 rounded-2xl font-bold text-sm shadow-sm flex justify-center items-center hover:bg-gray-50"><i
+                            class="fas fa-times"></i></button>
+                    <button
+                        class="flex-[3] bg-acc-peach text-primary font-bold py-4 rounded-2xl shadow-sm text-sm hover:brightness-95">PAUSAR</button>
                 </div>
             </div>
         </div>
@@ -145,27 +233,34 @@
 
     <!-- Secciones Dinamicas -->
     <section class="relative z-10 w-full py-16 overflow-hidden">
-        
+
         <!-- El Poder de la Constancia -->
         <div class="max-w-6xl mx-auto px-6 mb-24 flex flex-col md:flex-row items-center gap-12 md:gap-20">
             <div class="flex-1 text-left">
-                <div class="w-12 h-12 rounded-xl bg-acc-peach flex items-center justify-center text-orange-500 text-xl font-bold mb-6 shadow-sm border border-orange-200">
+                <div
+                    class="w-12 h-12 rounded-xl bg-acc-peach flex items-center justify-center text-orange-500 text-xl font-bold mb-6 shadow-sm border border-orange-200">
                     <i class="fas fa-fire"></i>
                 </div>
-                <h2 class="text-3xl md:text-4xl font-black tracking-tight text-primary mb-4">El hábito que no querrás romper</h2>
-                <h3 class="text-lg text-acc-blue-dark font-bold mb-4 uppercase tracking-wide">El Poder de la Constancia</h3>
+                <h2 class="text-3xl md:text-4xl font-black tracking-tight text-primary mb-4">El hábito que no querrás
+                    romper</h2>
+                <h3 class="text-lg text-acc-blue-dark font-bold mb-4 uppercase tracking-wide">El Poder de la Constancia
+                </h3>
                 <p class="text-secondary leading-relaxed text-lg">
-                    Inspirado en los sistemas de aprendizaje más exitosos, nuestro sistema de <strong>Rachas (Streaks)</strong> te mantiene motivado día tras día. Visualiza tu compromiso y construye una rutina irrompible.
+                    Inspirado en los sistemas de aprendizaje más exitosos, nuestro sistema de <strong>Rachas
+                        (Streaks)</strong> te mantiene motivado día tras día. Visualiza tu compromiso y construye una
+                    rutina irrompible.
                 </p>
             </div>
-            
+
             <div class="flex-1 w-full relative">
                 <!-- CSS Graphic: Streaks -->
-                <div class="glass-panel p-6 md:p-8 rounded-3xl shadow-xl border border-theme float-fast max-w-sm mx-auto flex flex-col justify-center min-h-[200px]">
+                <div
+                    class="glass-panel p-6 md:p-8 rounded-3xl shadow-xl border border-theme float-fast max-w-sm mx-auto flex flex-col justify-center min-h-[200px]">
                     <div class="text-center">
                         <i class="fas fa-fire text-6xl text-orange-500 animate-pulse drop-shadow-md"></i>
                         <h4 class="text-4xl font-black text-primary mt-4">Día 14</h4>
-                        <p class="text-xs text-secondary uppercase font-bold tracking-widest mt-2">Sigue así, no pierdas el ritmo!</p>
+                        <p class="text-xs text-secondary uppercase font-bold tracking-widest mt-2">Sigue así, no pierdas
+                            el ritmo!</p>
                     </div>
                 </div>
             </div>
@@ -174,10 +269,12 @@
         <!-- Análisis Visual -->
         <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row-reverse items-center gap-12 md:gap-20">
             <div class="flex-1 text-left">
-                <div class="w-12 h-12 rounded-xl bg-acc-blue flex items-center justify-center text-blue-700 text-xl font-bold mb-6 shadow-sm border border-blue-200">
+                <div
+                    class="w-12 h-12 rounded-xl bg-acc-blue flex items-center justify-center text-blue-700 text-xl font-bold mb-6 shadow-sm border border-blue-200">
                     <i class="fas fa-chart-pie"></i>
                 </div>
-                <h2 class="text-3xl md:text-4xl font-black tracking-tight text-primary mb-4">Tus datos, tu mejor estrategia</h2>
+                <h2 class="text-3xl md:text-4xl font-black tracking-tight text-primary mb-4">Tus datos, tu mejor
+                    estrategia</h2>
                 <h3 class="text-lg text-acc-blue-dark font-bold mb-4 uppercase tracking-wide">Análisis Visual</h3>
                 <p class="text-secondary leading-relaxed text-lg mb-6">
                     Lo que no se mide, no se puede mejorar. Accede a estadísticas detalladas de tus sesiones de estudio:
@@ -185,25 +282,30 @@
                 <ul class="space-y-4 text-primary">
                     <li class="flex items-start gap-3">
                         <i class="fas fa-check-circle text-acc-green-dark mt-1 text-sm"></i>
-                        <p><strong class="font-black">Distribución de tiempo:</strong> Identifica en qué materias inviertes más energía.</p>
+                        <p><strong class="font-black">Distribución de tiempo:</strong> Identifica en qué materias
+                            inviertes más energía.</p>
                     </li>
                     <li class="flex items-start gap-3">
                         <i class="fas fa-check-circle text-acc-green-dark mt-1 text-sm"></i>
-                        <p><strong class="font-black">Mapas de calor:</strong> Descubre tus horas de mayor rendimiento durante la semana.</p>
+                        <p><strong class="font-black">Mapas de calor:</strong> Descubre tus horas de mayor rendimiento
+                            durante la semana.</p>
                     </li>
                     <li class="flex items-start gap-3">
                         <i class="fas fa-check-circle text-acc-green-dark mt-1 text-sm"></i>
-                        <p><strong class="font-black">Evolución de objetivos:</strong> Mira cómo tus metas se vuelven realidad a través de gráficos dinámicos.</p>
+                        <p><strong class="font-black">Evolución de objetivos:</strong> Mira cómo tus metas se vuelven
+                            realidad a través de gráficos dinámicos.</p>
                     </li>
                 </ul>
             </div>
-            
+
             <div class="flex-1 w-full relative">
                 <!-- CSS Graphic: Analytics/Heatmap Mockup -->
-                <div class="glass-panel p-6 md:p-8 rounded-3xl shadow-xl border border-theme float-delayed max-w-md mx-auto relative w-full h-[300px]">
-                    
+                <div
+                    class="glass-panel p-6 md:p-8 rounded-3xl shadow-xl border border-theme float-delayed max-w-md mx-auto relative w-full h-[300px]">
+
                     <div class="absolute inset-0 p-6 flex flex-col w-full h-full">
-                        <h5 class="text-xs font-bold uppercase text-secondary mb-4 flex items-center gap-2"><i class="fas fa-align-left text-acc-blue"></i> Distribución Semanal</h5>
+                        <h5 class="text-xs font-bold uppercase text-secondary mb-4 flex items-center gap-2"><i
+                                class="fas fa-align-left text-acc-blue"></i> Distribución Semanal</h5>
                         <div class="flex-1 w-full h-full relative">
                             <canvas id="landing-mock-chart"></canvas>
                         </div>
@@ -218,7 +320,8 @@
     <section class="relative z-10 border-y border-theme bg-main/50 py-16 px-6 mt-16">
         <div class="max-w-4xl mx-auto text-center">
             <h2 class="text-2xl font-black mb-4">Pruébalo ahora y siente la diferencia</h2>
-            <a href="/app.html" class="bg-primary text-white bg-[#5c554b] hover:bg-[#3d3831] font-bold px-8 py-3 rounded-full text-sm inline-block transition-colors">
+            <a href="/app.html"
+                class="bg-primary text-white bg-[#5c554b] hover:bg-[#3d3831] font-bold px-8 py-3 rounded-full text-sm inline-block transition-colors">
                 Abrir Aplicación Gratuita
             </a>
         </div>
@@ -230,11 +333,13 @@
             <img src="/timer-icon.png" alt="Study Meter" class="w-10 h-10 mb-4 opacity-80" />
             <div class="font-black text-xl tracking-tight text-primary mb-2">Study Meter</div>
             <p class="text-secondary text-sm mb-8">Desarrollado para estudiantes, cuidando tu enfoque.</p>
-            
+
             <p class="text-xs text-secondary font-medium">
-                &copy; <script>document.write(new Date().getFullYear())</script> Study Meter. Todos los derechos reservados.
+                &copy;
+                <script>document.write(new Date().getFullYear())</script> Study Meter. Todos los derechos reservados.
             </p>
         </div>
     </footer>
 </body>
+
 </html>
