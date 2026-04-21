@@ -13,9 +13,9 @@ import { initDailyGoalPanel, renderDailyPlan } from './modules/dailyGoal.js';
 import { initProfile } from './modules/profile.js';
 
 // --- INIT ---
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     initAuth();
-    initThemes();
+    await initThemes();
     initTimer();
     initDailyGoalPanel(); // New
     initProfile();

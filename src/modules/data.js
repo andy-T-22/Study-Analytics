@@ -81,7 +81,14 @@ const loadPreferences = async () => {
     
     if (needsInitialSave && currentUserRef) {
         const docRef = doc(db, 'user_preferences', currentUserRef.uid);
-        await setDoc(docRef, { subjects, methods, reasons, subjectColors, onboarded: false });
+        await setDoc(docRef, { 
+            subjects, 
+            methods, 
+            reasons, 
+            subjectColors, 
+            onboarded: false,
+            theme: 'pastel'
+        });
     }
 
     renderAllDropdowns();

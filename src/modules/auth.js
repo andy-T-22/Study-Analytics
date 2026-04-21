@@ -2,6 +2,7 @@ import { auth, db } from "../services/firebaseConfig.js";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendEmailVerification, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, deleteUser, updatePassword, updateProfile } from "firebase/auth";
 import { doc, deleteDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { initData, loadHistory } from "./data.js";
+import { loadThemeFromFirestore, setTheme } from "./themes.js";
 
 let currentUser = null;
 
@@ -202,7 +203,7 @@ export const initAuth = () => {
             if (auth.currentUser) {
                 await auth.currentUser.reload();
                 if (auth.currentUser.emailVerified) {
-                    setAppUser(auth.currentUser);
+                    await setAppUser(auth.currentUser);
                 } else {
                     import('./utils.js').then(({showAlert}) => {
                         showAlert("Aún no se ha verificado. Por favor haz clic en el enlace de tu correo.", 'error');
@@ -351,7 +352,7 @@ export const initAuth = () => {
                 showVerificationPanelDOM();
             } else {
                 // Cuenta legacy o cuenta verificada
-                setAppUser(user);
+                await setAppUser(user);
             }
         } else {
             // No user is logged in
@@ -362,7 +363,7 @@ export const initAuth = () => {
     });
 };
 
-const setAppUser = (user) => {
+const setAppUser = async (user) => {
     currentUser = user;
 
     // UI Switch
@@ -389,6 +390,16 @@ const setAppUser = (user) => {
 
     // Initialize Data (Lists, History, etc.)
     initData(currentUser);
+
+    // Cargar tema del usuario desde Firestore
+    if (user && user.uid) {
+        try {
+            const userTheme = await loadThemeFromFirestore(user.uid);
+            setTheme(userTheme, user);
+        } catch (err) {
+            console.warn("No se pudo cargar el tema del usuario:", err);
+        }
+    }
 };
 
 const handleAuthError = (code) => {

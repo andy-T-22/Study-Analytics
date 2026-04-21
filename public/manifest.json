@@ -1,7 +1,7 @@
 {
   "name": "Study Meter",
   "short_name": "StudyMeter",
-  "start_url": "/",
+  "start_url": "/app.html",
   "display": "standalone",
   "background_color": "#FCFBF7",
   "theme_color": "#FCFBF7",
